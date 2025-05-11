@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { HistoricalNetWorth } from '../../context/FinanceContext';
 
 interface GrowthChartProps {
@@ -38,13 +38,20 @@ const GrowthChart: React.FC<GrowthChartProps> = ({ data, timeFrame }) => {
   // Format data for the chart
   const chartData = filteredData.map(item => ({
     date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    amount: item.amount,
+    currentValue: item.currentAmount,
+    purchasedValue: item.purchaseAmount,
+    interest: item.currentAmount - item.purchaseAmount
   }));
   
   // Calculate growth percentage
   const growth = filteredData.length >= 2 
-    ? ((filteredData[filteredData.length - 1].amount - filteredData[0].amount) / filteredData[0].amount) * 100
+    ? ((filteredData[filteredData.length - 1].currentAmount - filteredData[0].currentAmount) / filteredData[0].currentAmount) * 100
     : 0;
+
+  // Calculate interest (difference between purchase and current)
+  const latestData = filteredData[filteredData.length - 1];
+  const interestAmount = latestData ? latestData.currentAmount - latestData.purchaseAmount : 0;
+  const interestPercentage = latestData ? (interestAmount / latestData.purchaseAmount) * 100 : 0;
   
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -60,8 +67,11 @@ const GrowthChart: React.FC<GrowthChartProps> = ({ data, timeFrame }) => {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold">Net Worth Growth</h3>
         <div className="text-right">
-          <p className={`text-lg font-bold ${growth >= 0 ? 'text-finance-green' : 'text-finance-red'}`}>
+          <p className={`text-lg font-bold ${growth >= 0 ? 'growth-positive' : 'growth-negative'}`}>
             {growth >= 0 ? '+' : ''}{growth.toFixed(2)}%
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Gain: {formatCurrency(interestAmount)} ({interestPercentage.toFixed(2)}%)
           </p>
         </div>
       </div>
@@ -85,16 +95,29 @@ const GrowthChart: React.FC<GrowthChartProps> = ({ data, timeFrame }) => {
               tickFormatter={formatCurrency}
             />
             <Tooltip 
-              formatter={(value) => [formatCurrency(value as number), 'Net Worth']}
+              formatter={(value) => [formatCurrency(value as number), '']}
+              labelFormatter={(label) => `Date: ${label}`}
               contentStyle={{ borderRadius: '0.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
             />
+            <Legend />
             <Line 
+              name="Current Value"
               type="monotone" 
-              dataKey="amount" 
-              stroke="#1A73E8" 
+              dataKey="currentValue" 
+              stroke="#95e362" 
               strokeWidth={2} 
               dot={false}
-              activeDot={{ r: 6, fill: '#1A73E8' }}
+              activeDot={{ r: 6, fill: '#95e362' }}
+            />
+            <Line 
+              name="Purchased Value"
+              type="monotone" 
+              dataKey="purchasedValue" 
+              stroke="#01362e" 
+              strokeWidth={2} 
+              dot={false}
+              activeDot={{ r: 6, fill: '#01362e' }}
+              strokeDasharray="5 5"
             />
           </LineChart>
         </ResponsiveContainer>

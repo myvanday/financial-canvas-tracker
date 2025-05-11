@@ -17,19 +17,17 @@ const AssetCard: React.FC<AssetCardProps> = ({
   onClickAsset
 }) => {
   const assetIcons: Record<AssetType, string> = {
-    cash: '💵',
-    investment: '📈',
-    property: '🏠',
-    vehicle: '🚗',
-    other: '📦'
+    money: '💵',
+    savings: '💰',
+    investments: '📈',
+    physical: '🏠'
   };
 
   const assetLabels: Record<AssetType, string> = {
-    cash: 'Cash',
-    investment: 'Investments',
-    property: 'Properties',
-    vehicle: 'Vehicles',
-    other: 'Other Assets'
+    money: 'Money',
+    savings: 'Savings',
+    investments: 'Investments',
+    physical: 'Physical Assets'
   };
 
   const formatCurrency = (amount: number) => {
@@ -41,22 +39,42 @@ const AssetCard: React.FC<AssetCardProps> = ({
     }).format(amount);
   };
 
+  // Calculate growth rate (mock data for now)
+  const calculateGrowth = () => {
+    const initialTotal = accounts.reduce((sum, account) => sum + account.initialBalance, 0);
+    if (initialTotal === 0) return 0;
+    return ((totalBalance - initialTotal) / initialTotal) * 100;
+  };
+  
+  const growth = calculateGrowth();
+
+  const getAssetClassName = () => {
+    return `asset-card asset-${type} cursor-pointer`;
+  };
+
   return (
     <div 
-      className="asset-card"
+      className={getAssetClassName()}
       onClick={() => onClickAsset(type)}
     >
       <div className="asset-card-header">
         <div className="flex items-center">
-          <span className="text-xl mr-2">{assetIcons[type]}</span>
+          <div className="asset-icon-container mr-2">
+            <span className="text-xl">{assetIcons[type]}</span>
+          </div>
           <h3 className="font-medium">{assetLabels[type]}</h3>
         </div>
         <div className="flex items-center space-x-2">
           <span className="card-amount">{formatCurrency(totalBalance)}</span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <ChevronRight className="h-4 w-4 text-white" />
         </div>
       </div>
-      <p className="card-label">{accounts.length} account{accounts.length !== 1 ? 's' : ''}</p>
+      <div className="flex justify-between">
+        <p className="card-label text-white/80">{accounts.length} account{accounts.length !== 1 ? 's' : ''}</p>
+        <p className={`text-xs font-medium ${growth >= 0 ? 'text-white' : 'text-white/80'}`}>
+          {growth >= 0 ? '+' : ''}{growth.toFixed(2)}% growth
+        </p>
+      </div>
     </div>
   );
 };

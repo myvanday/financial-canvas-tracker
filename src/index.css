@@ -80,7 +80,7 @@
 
 @layer components {
   .tab-active {
-    @apply text-primary border-primary;
+    @apply text-primary-dark border-primary font-medium;
   }
   
   .tab-inactive {
@@ -108,7 +108,7 @@
   }
   
   .floating-button {
-    @apply fixed bottom-6 right-6 bg-primary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors;
+    @apply fixed bottom-6 right-6 bg-primary text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:opacity-90 transition-colors;
   }
   
   .modal-overlay {
@@ -117,5 +117,33 @@
   
   .modal-content {
     @apply bg-white rounded-t-2xl md:rounded-2xl p-6 w-full max-w-md animate-slide-in;
+  }
+
+  .asset-money {
+    @apply bg-gradient-money text-white;
+  }
+  
+  .asset-savings {
+    @apply bg-gradient-savings text-white;
+  }
+  
+  .asset-investments {
+    @apply bg-gradient-investments text-white;
+  }
+  
+  .asset-physical {
+    @apply bg-gradient-physical text-white;
+  }
+
+  .growth-positive {
+    @apply text-finance-positive;
+  }
+  
+  .growth-negative {
+    @apply text-finance-negative;
+  }
+
+  .asset-icon-container {
+    @apply flex items-center justify-center w-10 h-10 rounded-full bg-white/20 text-white;
   }
 }

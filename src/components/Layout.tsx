@@ -49,11 +49,11 @@ const Layout: React.FC = () => {
   };
   
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-finance-light-gray">
       {/* Main Content */}
       <div className="max-w-lg mx-auto bg-white min-h-screen pb-20">
         {/* Header */}
-        <header className="sticky top-0 bg-white p-4 border-b z-10">
+        <header className="sticky top-0 bg-gradient-primary text-white p-4 z-10">
           <h1 className="text-2xl font-bold text-center">Net Worth Tracker</h1>
         </header>
         

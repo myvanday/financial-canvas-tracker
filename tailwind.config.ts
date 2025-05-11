@@ -26,7 +26,8 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: 'hsl(var(--primary))',
+					DEFAULT: '#95e362',
+					dark: '#01362e',
 					foreground: 'hsl(var(--primary-foreground))'
 				},
 				secondary: {
@@ -64,16 +65,16 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
                 finance: {
-                    'blue': '#1A73E8',
-                    'green': '#34A853',
-                    'light-green': '#7CB342',
-                    'teal': '#00ACC1',
-                    'purple': '#673AB7',
-                    'deep-purple': '#5E35B1',
-                    'orange': '#FF9800',
-                    'red': '#EA4335',
-                    'gray': '#757575',
-                    'light-gray': '#E0E0E0'
+                    'money': '#9DC08B',        // Money (Cash/Bank/Digital)
+                    'savings': '#40A2E3',      // Savings
+                    'investments': '#FFB100',  // Investments
+                    'physical': '#B15EFF',     // Physical Assets
+                    'green': '#95e362',        // Primary green
+                    'dark-green': '#01362e',   // Dark green
+                    'light-gray': '#F4F4F6',   // Light gray
+                    'gray': '#A8AAA6',         // Gray
+                    'positive': '#34A853',     // For positive growth
+                    'negative': '#EA4335',     // For negative growth
                 }
 			},
 			borderRadius: {
@@ -112,7 +113,14 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
                 'fade-in': 'fade-in 0.3s ease-out',
                 'slide-in': 'slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-			}
+			},
+            backgroundImage: {
+                'gradient-primary': 'linear-gradient(135deg, #95e362 0%, #01362e 100%)',
+                'gradient-money': 'linear-gradient(135deg, #9DC08B 0%, #609966 100%)',
+                'gradient-savings': 'linear-gradient(135deg, #40A2E3 0%, #0B60B0 100%)',
+                'gradient-investments': 'linear-gradient(135deg, #FFB100 0%, #FD841F 100%)',
+                'gradient-physical': 'linear-gradient(135deg, #B15EFF 0%, #7752FE 100%)',
+            }
 		}
 	},
 	plugins: [require("tailwindcss-animate")],

@@ -1,32 +1,46 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { AssetType } from '../../context/FinanceContext';
 
 interface AssetAllocationChartProps {
   data: Record<string, number>;
+  historicalData?: { date: Date; allocation: Record<AssetType, number> }[];
   title: string;
+  showTimeSelector?: boolean;
 }
 
-const AssetAllocationChart: React.FC<AssetAllocationChartProps> = ({ data, title }) => {
+const AssetAllocationChart: React.FC<AssetAllocationChartProps> = ({ 
+  data, 
+  historicalData, 
+  title,
+  showTimeSelector = false 
+}) => {
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    historicalData ? historicalData.length - 1 : 0
+  );
+
   const COLORS: Record<string, string> = {
-    cash: '#34A853',       // Green
-    investment: '#1A73E8', // Blue
-    property: '#673AB7',   // Purple
-    vehicle: '#FF9800',    // Orange
-    other: '#757575',      // Gray
+    money: '#9DC08B',      // Money
+    savings: '#40A2E3',    // Savings
+    investments: '#FFB100', // Investments
+    physical: '#B15EFF',   // Physical Assets
   };
 
   const LABELS: Record<string, string> = {
-    cash: 'Cash',
-    investment: 'Investments',
-    property: 'Properties',
-    vehicle: 'Vehicles',
-    other: 'Other Assets',
+    money: "Money",
+    savings: "Savings",
+    investments: "Investments",
+    physical: "Physical Assets",
   };
 
+  // Compute display data based on historical selection if available
+  const displayData = showTimeSelector && historicalData && historicalData[selectedMonth]
+    ? historicalData[selectedMonth].allocation
+    : data;
+
   const formatData = () => {
-    return Object.entries(data).map(([key, value]) => ({
+    return Object.entries(displayData).map(([key, value]) => ({
       name: LABELS[key as AssetType] || key,
       value,
       id: key,
@@ -42,6 +56,13 @@ const AssetAllocationChart: React.FC<AssetAllocationChartProps> = ({ data, title
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
+  };
+
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('en-US', { 
+      year: 'numeric',
+      month: 'short',
+    });
   };
 
   const totalValue = chartData.reduce((sum, item) => sum + item.value, 0);
@@ -85,7 +106,23 @@ const AssetAllocationChart: React.FC<AssetAllocationChartProps> = ({ data, title
 
   return (
     <div className="w-full bg-white p-4 rounded-xl shadow-sm border mb-4">
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        {showTimeSelector && historicalData && (
+          <select
+            className="text-sm border rounded p-1"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+          >
+            {historicalData.map((data, index) => (
+              <option key={index} value={index}>
+                {formatDate(data.date)}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
