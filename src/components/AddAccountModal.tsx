@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { useFinance, AssetType, Account } from '../context/FinanceContext';
+import { useFinance, AssetType, Account, AssetSubType } from '../context/FinanceContext';
 import { useToast } from '../hooks/use-toast';
 
 interface AddAccountModalProps {
@@ -21,10 +20,12 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
   const { toast } = useToast();
   const [step, setStep] = useState<number>(1);
   const [inputMethod, setInputMethod] = useState<InputMethod>('manual');
-  const [assetType, setAssetType] = useState<AssetType>(existingAccount?.assetType || 'cash');
+  const [assetType, setAssetType] = useState<AssetType>(existingAccount?.assetType || 'money');
+  const [assetSubType, setAssetSubType] = useState<AssetSubType>(existingAccount?.assetSubType || 'bank');
   const [name, setName] = useState<string>(existingAccount?.name || '');
   const [balance, setBalance] = useState<string>(existingAccount ? existingAccount.balance.toString() : '');
   const [institution, setInstitution] = useState<string>(existingAccount?.institution || '');
+  const [transactionType, setTransactionType] = useState<'buy' | 'sell' | 'update'>('update');
 
   const isEditing = !!existingAccount;
 
@@ -50,7 +51,7 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
     }
 
     if (isEditing && existingAccount) {
-      updateAccount(existingAccount.id, parsedBalance);
+      updateAccount(existingAccount.id, parsedBalance, transactionType);
       toast({
         title: "Account updated",
         description: `Updated balance for ${name}`,
@@ -59,7 +60,9 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
       addAccount({
         name,
         balance: parsedBalance,
+        initialBalance: parsedBalance, // New accounts start with initial balance = current balance
         assetType,
+        assetSubType,
         institution: institution.trim() || undefined,
       });
       toast({
@@ -87,21 +90,56 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
   const resetForm = () => {
     setStep(1);
     setInputMethod('manual');
-    setAssetType('cash');
+    setAssetType('money');
+    setAssetSubType('bank');
     setName('');
     setBalance('');
     setInstitution('');
+    setTransactionType('update');
   };
 
   if (!isOpen) return null;
 
   const assetTypeOptions: { value: AssetType; label: string; icon: string; }[] = [
-    { value: 'cash', label: 'Cash', icon: '💵' },
-    { value: 'investment', label: 'Investment', icon: '📈' },
-    { value: 'property', label: 'Property', icon: '🏠' },
-    { value: 'vehicle', label: 'Vehicle', icon: '🚗' },
-    { value: 'other', label: 'Other', icon: '📦' },
+    { value: 'money', label: 'Money', icon: '💵' },
+    { value: 'savings', label: 'Savings', icon: '💰' },
+    { value: 'investments', label: 'Investments', icon: '📈' },
+    { value: 'physical', label: 'Physical Assets', icon: '🏠' },
   ];
+
+  const getSubTypeOptions = (): { value: AssetSubType; label: string }[] => {
+    switch(assetType) {
+      case 'money':
+        return [
+          { value: 'cash', label: 'Cash' },
+          { value: 'bank', label: 'Bank Account' },
+          { value: 'digital', label: 'Digital Wallet' }
+        ];
+      case 'savings':
+        return [
+          { value: 'fixed', label: 'Fixed Duration' },
+          { value: 'accumulating', label: 'Accumulating' },
+          { value: 'other_savings', label: 'Other' }
+        ];
+      case 'investments':
+        return [
+          { value: 'stocks', label: 'Stocks' },
+          { value: 'bonds', label: 'Bonds' },
+          { value: 'funds', label: 'Funds' },
+          { value: 'crypto', label: 'Crypto' },
+          { value: 'other_investments', label: 'Other' }
+        ];
+      case 'physical':
+        return [
+          { value: 'property', label: 'Property' },
+          { value: 'vehicle', label: 'Vehicle' },
+          { value: 'metal', label: 'Precious Metal' },
+          { value: 'other_physical', label: 'Other' }
+        ];
+      default:
+        return [];
+    }
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -170,7 +208,14 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
                       ? 'border-primary bg-primary/5' 
                       : 'border-border hover:border-primary/50'
                   }`}
-                  onClick={() => setAssetType(option.value)}
+                  onClick={() => {
+                    setAssetType(option.value);
+                    // Set default subtype for the selected asset type
+                    const subTypes = getSubTypeOptions();
+                    if (subTypes.length > 0) {
+                      setAssetSubType(subTypes[0].value);
+                    }
+                  }}
                 >
                   <div className="text-2xl mb-2">{option.icon}</div>
                   <div className="font-medium">{option.label}</div>
@@ -222,23 +267,50 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
             ) : (
               <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
                 {!isEditing && (
-                  <div>
-                    <label htmlFor="asset-type" className="block text-sm font-medium mb-1">
-                      Asset Type
-                    </label>
-                    <select
-                      id="asset-type"
-                      value={assetType}
-                      onChange={(e) => setAssetType(e.target.value as AssetType)}
-                      className="w-full p-2 border rounded-md"
-                    >
-                      {assetTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.icon} {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    <div>
+                      <label htmlFor="asset-type" className="block text-sm font-medium mb-1">
+                        Asset Type
+                      </label>
+                      <select
+                        id="asset-type"
+                        value={assetType}
+                        onChange={(e) => {
+                          setAssetType(e.target.value as AssetType);
+                          // Reset subtype when asset type changes
+                          const subTypes = getSubTypeOptions();
+                          if (subTypes.length > 0) {
+                            setAssetSubType(subTypes[0].value);
+                          }
+                        }}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        {assetTypeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.icon} {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="asset-subtype" className="block text-sm font-medium mb-1">
+                        Asset Sub-Type
+                      </label>
+                      <select
+                        id="asset-subtype"
+                        value={assetSubType}
+                        onChange={(e) => setAssetSubType(e.target.value as AssetSubType)}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        {getSubTypeOptions().map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
                 )}
                 
                 <div>
@@ -257,9 +329,40 @@ const AddAccountModal: React.FC<AddAccountModalProps> = ({
                   />
                 </div>
                 
+                {isEditing && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Transaction Type
+                    </label>
+                    <div className="flex space-x-2">
+                      {['buy', 'sell', 'update'].map((type) => (
+                        <button
+                          key={type}
+                          type="button"
+                          className={`flex-1 py-2 px-3 border rounded-md text-center ${
+                            transactionType === type 
+                              ? 'border-primary bg-primary/5 text-primary' 
+                              : 'border-border'
+                          }`}
+                          onClick={() => setTransactionType(type as 'buy' | 'sell' | 'update')}
+                        >
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <div>
                   <label htmlFor="account-balance" className="block text-sm font-medium mb-1">
-                    Balance
+                    {isEditing 
+                      ? (transactionType === 'buy' 
+                          ? 'Purchase Amount' 
+                          : transactionType === 'sell' 
+                            ? 'Sale Amount' 
+                            : 'New Balance')
+                      : 'Balance'
+                    }
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-2">$</span>

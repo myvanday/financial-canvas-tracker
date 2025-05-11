@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Account, AssetType } from '../context/FinanceContext';
@@ -54,7 +53,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
 
   return (
     <div 
-      className={getAssetClassName()}
+      className={`asset-card asset-${type} cursor-pointer`}
       onClick={() => onClickAsset(type)}
     >
       <div className="asset-card-header">
