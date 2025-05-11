@@ -1,14 +1,33 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { HistoricalNetWorth } from '../../context/FinanceContext';
 
 interface GrowthChartProps {
   data: HistoricalNetWorth[];
-  timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All';
+  timeFrame?: '1M' | '3M' | '6M' | '1Y' | 'All';
+  onTimeFrameChange?: (timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => void;
+  showTimeSelector?: boolean;
 }
 
-const GrowthChart: React.FC<GrowthChartProps> = ({ data, timeFrame }) => {
+const GrowthChart: React.FC<GrowthChartProps> = ({ 
+  data, 
+  timeFrame: externalTimeFrame, 
+  onTimeFrameChange,
+  showTimeSelector = true
+}) => {
+  const [internalTimeFrame, setInternalTimeFrame] = useState<'1M' | '3M' | '6M' | '1Y' | 'All'>('6M');
+  
+  const timeFrame = externalTimeFrame || internalTimeFrame;
+  
+  const handleTimeFrameChange = (newTimeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => {
+    if (onTimeFrameChange) {
+      onTimeFrameChange(newTimeFrame);
+    } else {
+      setInternalTimeFrame(newTimeFrame);
+    }
+  };
+
   const getFilteredData = () => {
     const today = new Date();
     let cutoffDate = new Date();
@@ -75,6 +94,25 @@ const GrowthChart: React.FC<GrowthChartProps> = ({ data, timeFrame }) => {
           </p>
         </div>
       </div>
+      
+      {showTimeSelector && (
+        <div className="time-selector-container mb-4">
+          {(['1M', '3M', '6M', '1Y', 'All'] as const).map((frame) => (
+            <button
+              key={frame}
+              className={`time-selector-button ${
+                timeFrame === frame
+                  ? 'time-selector-active'
+                  : 'time-selector-inactive'
+              }`}
+              onClick={() => handleTimeFrameChange(frame)}
+            >
+              {frame}
+            </button>
+          ))}
+        </div>
+      )}
+      
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
@@ -104,19 +142,19 @@ const GrowthChart: React.FC<GrowthChartProps> = ({ data, timeFrame }) => {
               name="Current Value"
               type="monotone" 
               dataKey="currentValue" 
-              stroke="#95e362" 
+              stroke="#01362e" 
               strokeWidth={2} 
               dot={false}
-              activeDot={{ r: 6, fill: '#95e362' }}
+              activeDot={{ r: 6, fill: '#01362e' }}
             />
             <Line 
               name="Purchased Value"
               type="monotone" 
               dataKey="purchasedValue" 
-              stroke="#01362e" 
+              stroke="#95e362" 
               strokeWidth={2} 
               dot={false}
-              activeDot={{ r: 6, fill: '#01362e' }}
+              activeDot={{ r: 6, fill: '#95e362' }}
               strokeDasharray="5 5"
             />
           </LineChart>

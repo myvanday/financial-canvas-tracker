@@ -8,12 +8,16 @@ import { ArrowLeft } from 'lucide-react';
 
 interface PortfolioTabProps {
   onAccountClick: (account: Account) => void;
+  selectedAssetType?: AssetType | null;
 }
 
-const PortfolioTab: React.FC<PortfolioTabProps> = ({ onAccountClick }) => {
+const PortfolioTab: React.FC<PortfolioTabProps> = ({ onAccountClick, selectedAssetType: externalSelectedAsset }) => {
   const { accounts, assetAllocation, assetAllocations, historicalNetWorth, getAssetTypeLabel } = useFinance();
-  const [selectedAsset, setSelectedAsset] = useState<AssetType | null>(null);
+  const [internalSelectedAsset, setInternalSelectedAsset] = useState<AssetType | null>(null);
   const [timeFrame, setTimeFrame] = useState<'1M' | '3M' | '6M' | '1Y' | 'All'>('6M');
+  
+  // Use external selected asset if provided, otherwise use internal state
+  const selectedAsset = externalSelectedAsset !== undefined ? externalSelectedAsset : internalSelectedAsset;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -64,11 +68,11 @@ const PortfolioTab: React.FC<PortfolioTabProps> = ({ onAccountClick }) => {
   };
 
   const handleAssetClick = (assetType: AssetType) => {
-    setSelectedAsset(assetType);
+    setInternalSelectedAsset(assetType);
   };
 
   const handleBackClick = () => {
-    setSelectedAsset(null);
+    setInternalSelectedAsset(null);
   };
 
   const getAssetColor = (assetType: AssetType): string => {
@@ -109,23 +113,25 @@ const PortfolioTab: React.FC<PortfolioTabProps> = ({ onAccountClick }) => {
                 return (
                   <div 
                     key={assetType}
-                    className={`asset-card text-white ${getAssetColor(assetType as AssetType)}`}
+                    className={`asset-card ${getAssetColor(assetType as AssetType)}`}
                     onClick={() => handleAssetClick(assetType as AssetType)}
                   >
-                    <div className="flex justify-between items-center mb-1">
-                      <h4 className="font-medium">{getAssetTypeLabel(assetType as AssetType)}</h4>
-                      <p className="text-xs">
-                        {accounts.filter(acc => acc.assetType === assetType).length} accounts
-                      </p>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <p className="card-amount">{formatCurrency(totalBalance)}</p>
-                      <p className="text-xs font-medium">
-                        {growthPercent >= 0 ? '+' : ''}{growthPercent.toFixed(1)}%
-                        <span className="ml-1 text-white/80">
-                          ({((totalBalance / Object.values(assetAllocation).reduce((a, b) => a + b, 0)) * 100).toFixed(1)}% of portfolio)
-                        </span>
-                      </p>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{getAssetTypeLabel(assetType as AssetType)}</h4>
+                        <p className="text-xs opacity-80">
+                          {accounts.filter(acc => acc.assetType === assetType).length} accounts
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="card-amount">{formatCurrency(totalBalance)}</p>
+                        <p className="text-xs font-medium">
+                          {growthPercent >= 0 ? '+' : ''}{growthPercent.toFixed(1)}%
+                          <span className="ml-1 opacity-80">
+                            ({((totalBalance / Object.values(assetAllocation).reduce((a, b) => a + b, 0)) * 100).toFixed(1)}%)
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -142,7 +148,7 @@ const PortfolioTab: React.FC<PortfolioTabProps> = ({ onAccountClick }) => {
             Back to Asset Allocation
           </button>
           
-          <div className={`p-4 rounded-xl mb-4 text-white ${getAssetColor(selectedAsset)}`}>
+          <div className={`p-4 rounded-xl mb-4 ${getAssetColor(selectedAsset)}`}>
             <h2 className="text-xl font-semibold">{getAssetTypeLabel(selectedAsset)}</h2>
             <p className="text-2xl font-bold">{formatCurrency(totalForAssetType)}</p>
             <p className="text-xs mt-1">
@@ -151,26 +157,13 @@ const PortfolioTab: React.FC<PortfolioTabProps> = ({ onAccountClick }) => {
             </p>
           </div>
 
-          {/* Time Frame Selector for Growth Chart */}
-          <div className="flex space-x-2 mb-4 overflow-x-auto pb-1">
-            {(['1M', '3M', '6M', '1Y', 'All'] as const).map((frame) => (
-              <button
-                key={frame}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  timeFrame === frame
-                    ? 'bg-primary text-white font-medium'
-                    : 'bg-muted text-muted-foreground'
-                }`}
-                onClick={() => setTimeFrame(frame)}
-              >
-                {frame}
-              </button>
-            ))}
-          </div>
-          
           {/* Asset Growth Chart */}
           <div className="mb-6">
-            <GrowthChart data={getAssetHistoricalData()} timeFrame={timeFrame} />
+            <GrowthChart 
+              data={getAssetHistoricalData()} 
+              timeFrame={timeFrame}
+              onTimeFrameChange={setTimeFrame} 
+            />
           </div>
           
           {Object.keys(accountDistribution).length > 1 && (
@@ -179,13 +172,17 @@ const PortfolioTab: React.FC<PortfolioTabProps> = ({ onAccountClick }) => {
           
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-3">Accounts</h3>
-            {filteredAccounts.map(account => (
-              <AccountCard 
-                key={account.id} 
-                account={account} 
-                onClickAccount={onAccountClick} 
-              />
-            ))}
+            {filteredAccounts.length > 0 ? (
+              filteredAccounts.map(account => (
+                <AccountCard 
+                  key={account.id} 
+                  account={account} 
+                  onClickAccount={onAccountClick} 
+                />
+              ))
+            ) : (
+              <p className="text-center py-4 text-muted-foreground">No accounts in this category</p>
+            )}
           </div>
         </>
       )}

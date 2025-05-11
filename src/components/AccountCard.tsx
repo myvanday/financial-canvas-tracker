@@ -12,7 +12,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onClickAccount }) =>
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: account.currency || 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
@@ -35,18 +35,20 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onClickAccount }) =>
       className="asset-card flex flex-col"
       onClick={() => onClickAccount(account)}
     >
-      <div className="flex justify-between items-center mb-1">
-        <h4 className="font-medium">{account.name}</h4>
-        <span className="card-amount">{formatCurrency(account.balance)}</span>
-      </div>
-      <div className="flex justify-between items-center">
-        <p className="text-xs text-muted-foreground">
-          {account.institution ? `${account.institution} • ` : ''}
-          Updated {getTimeAgo(account.lastUpdated)}
-        </p>
-        <p className={`text-xs font-medium ${growth >= 0 ? 'growth-positive' : 'growth-negative'}`}>
-          {growth >= 0 ? '+' : ''}{growth.toFixed(2)}%
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h4 className="font-medium">{account.name}</h4>
+          <p className="text-xs text-muted-foreground">
+            {account.institution ? `${account.institution} • ` : ''}
+            Updated {getTimeAgo(account.lastUpdated)}
+          </p>
+        </div>
+        <div className="text-right">
+          <span className="card-amount">{formatCurrency(account.balance)}</span>
+          <p className={`text-xs font-medium ${growth >= 0 ? 'growth-positive' : 'growth-negative'}`}>
+            {growth >= 0 ? '+' : ''}{growth.toFixed(2)}%
+          </p>
+        </div>
       </div>
     </div>
   );

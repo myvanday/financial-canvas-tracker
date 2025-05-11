@@ -26,9 +26,9 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
 				primary: {
-					DEFAULT: '#95e362',
-					dark: '#01362e',
-					foreground: 'hsl(var(--primary-foreground))'
+					DEFAULT: '#01362e',  // Dark green as primary button color
+					light: '#95e362',    // Light green
+					foreground: '#ffffff' // White text on primary
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -65,12 +65,12 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
                 finance: {
-                    'money': '#9DC08B',        // Money (Cash/Bank/Digital)
-                    'savings': '#40A2E3',      // Savings
-                    'investments': '#FFB100',  // Investments
-                    'physical': '#B15EFF',     // Physical Assets
-                    'green': '#95e362',        // Primary green
-                    'dark-green': '#01362e',   // Dark green
+                    'money': '#B4E4A5',        // Pastel green for Money
+                    'savings': '#A9D6E5',      // Pastel blue for Savings
+                    'investments': '#FFD59E',  // Pastel orange for Investments
+                    'physical': '#E6B8FF',     // Pastel purple for Physical Assets
+                    'dark-green': '#01362e',   // Dark green for buttons
+                    'light-green': '#95e362',  // Light green accent
                     'light-gray': '#F4F4F6',   // Light gray
                     'gray': '#A8AAA6',         // Gray
                     'positive': '#34A853',     // For positive growth
@@ -115,11 +115,11 @@ export default {
                 'slide-in': 'slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 			},
             backgroundImage: {
-                'gradient-primary': 'linear-gradient(135deg, #95e362 0%, #01362e 100%)',
-                'gradient-money': 'linear-gradient(135deg, #9DC08B 0%, #609966 100%)',
-                'gradient-savings': 'linear-gradient(135deg, #40A2E3 0%, #0B60B0 100%)',
-                'gradient-investments': 'linear-gradient(135deg, #FFB100 0%, #FD841F 100%)',
-                'gradient-physical': 'linear-gradient(135deg, #B15EFF 0%, #7752FE 100%)',
+                'gradient-money': 'linear-gradient(135deg, #D1F0C2 0%, #B4E4A5 100%)',
+                'gradient-savings': 'linear-gradient(135deg, #C1E3F0 0%, #A9D6E5 100%)',
+                'gradient-investments': 'linear-gradient(135deg, #FFE9BE 0%, #FFD59E 100%)',
+                'gradient-physical': 'linear-gradient(135deg, #F2D5FF 0%, #E6B8FF 100%)',
+                'gradient-primary': 'linear-gradient(135deg, #01362e 0%, #0A5043 100%)',
             }
 		}
 	},

@@ -21,10 +21,10 @@ const AssetAllocationChart: React.FC<AssetAllocationChartProps> = ({
   );
 
   const COLORS: Record<string, string> = {
-    money: '#9DC08B',      // Money
-    savings: '#40A2E3',    // Savings
-    investments: '#FFB100', // Investments
-    physical: '#B15EFF',   // Physical Assets
+    money: '#B4E4A5',      // Money
+    savings: '#A9D6E5',    // Savings
+    investments: '#FFD59E', // Investments
+    physical: '#E6B8FF',   // Physical Assets
   };
 
   const LABELS: Record<string, string> = {

@@ -2,18 +2,17 @@
 import React, { useState } from 'react';
 import { Home, PieChart, History, Plus } from 'lucide-react';
 import { useFinance, AssetType, Account } from '../context/FinanceContext';
+import { useNavigate } from 'react-router-dom';
 import HomeTab from './HomeTab';
 import PortfolioTab from './PortfolioTab';
 import HistoryTab from './HistoryTab';
-import AddAccountModal from './AddAccountModal';
 
 type TabType = 'home' | 'portfolio' | 'history';
 
 const Layout: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('home');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Account | undefined>(undefined);
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType | null>(null);
+  const navigate = useNavigate();
 
   const handleAssetClick = (assetType: AssetType) => {
     setSelectedAssetType(assetType);
@@ -21,18 +20,11 @@ const Layout: React.FC = () => {
   };
 
   const handleAccountClick = (account: Account) => {
-    setEditingAccount(account);
-    setShowAddModal(true);
+    navigate(`/account/${account.id}`, { state: { account } });
   };
 
   const handleAddAccount = () => {
-    setEditingAccount(undefined);
-    setShowAddModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowAddModal(false);
-    setEditingAccount(undefined);
+    navigate('/add-account');
   };
 
   const renderActiveTab = () => {
@@ -40,7 +32,7 @@ const Layout: React.FC = () => {
       case 'home':
         return <HomeTab onAssetClick={handleAssetClick} />;
       case 'portfolio':
-        return <PortfolioTab onAccountClick={handleAccountClick} />;
+        return <PortfolioTab onAccountClick={handleAccountClick} selectedAssetType={selectedAssetType} />;
       case 'history':
         return <HistoryTab />;
       default:
@@ -87,7 +79,10 @@ const Layout: React.FC = () => {
               className={`flex flex-1 flex-col items-center py-3 border-t-2 ${
                 activeTab === 'portfolio' ? 'tab-active' : 'tab-inactive'
               }`}
-              onClick={() => setActiveTab('portfolio')}
+              onClick={() => {
+                setSelectedAssetType(null);
+                setActiveTab('portfolio');
+              }}
             >
               <PieChart className="h-5 w-5 mb-1" />
               <span className="text-xs">Portfolio</span>
@@ -104,13 +99,6 @@ const Layout: React.FC = () => {
           </div>
         </nav>
       </div>
-      
-      {/* Add/Edit Account Modal */}
-      <AddAccountModal 
-        isOpen={showAddModal} 
-        onClose={handleCloseModal}
-        existingAccount={editingAccount}
-      />
     </div>
   );
 };
