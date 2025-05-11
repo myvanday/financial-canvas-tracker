@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 // Define types
@@ -18,6 +17,16 @@ export interface Account {
   assetSubType: AssetSubType;
   institution?: string;
   lastUpdated: Date;
+  currency?: string;
+  // For savings
+  duration?: number;
+  interestRate?: number;
+  // For investments
+  quantity?: number;
+  itemName?: string;
+  pricePerUnit?: number;
+  // For physical assets
+  rentalIncome?: number;
 }
 
 export interface Transaction {
@@ -29,6 +38,8 @@ export interface Transaction {
   date: Date;
   assetType: AssetType;
   transactionType: "buy" | "sell" | "update"; // New transaction type
+  type?: string;
+  amount?: number;
 }
 
 export interface HistoricalNetWorth {
