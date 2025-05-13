@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text } from 'react-native';
 import HomeScreen from '../screens/HomeScreen';
 import PortfolioScreen from '../screens/PortfolioScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -9,7 +8,7 @@ import Icon from '../components/Icon';
 
 const Tab = createBottomTabNavigator();
 
-// Modern, clean color scheme
+// Modern, clean color scheme with shades of black, white, and gray
 export const colors = {
   primary: '#333333',
   background: '#FFFFFF',
@@ -53,7 +52,7 @@ const TabNavigator = () => {
           title: 'Net Worth Tracker',
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Icon name="home" size={size} color={color} />
+            <Icon name="Home" size={size} color={color} />
           ),
         }}
       />
@@ -64,7 +63,7 @@ const TabNavigator = () => {
           title: 'Portfolio',
           tabBarLabel: 'Portfolio',
           tabBarIcon: ({ color, size }) => (
-            <Icon name="pie-chart" size={size} color={color} />
+            <Icon name="PieChart" size={size} color={color} />
           ),
         }}
       />
@@ -75,7 +74,7 @@ const TabNavigator = () => {
           title: 'History',
           tabBarLabel: 'History',
           tabBarIcon: ({ color, size }) => (
-            <Icon name="history" size={size} color={color} />
+            <Icon name="History" size={size} color={color} />
           ),
         }}
       />

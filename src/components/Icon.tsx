@@ -1,38 +1,23 @@
 
 import React from 'react';
-import { Home, PieChart, History, Plus, ArrowLeft, Edit, ChevronRight, X, User, Settings } from 'lucide-react-native';
+import * as Icons from 'lucide-react-native';
 
 interface IconProps {
-  name: string;
+  name: keyof typeof Icons;
   size?: number;
   color?: string;
+  style?: any; // Allow style prop to be passed
 }
 
-const Icon: React.FC<IconProps> = ({ name, size = 24, color = '#000' }) => {
-  switch (name) {
-    case 'home':
-      return <Home size={size} color={color} />;
-    case 'pie-chart':
-      return <PieChart size={size} color={color} />;
-    case 'history':
-      return <History size={size} color={color} />;
-    case 'plus':
-      return <Plus size={size} color={color} />;
-    case 'arrow-left':
-      return <ArrowLeft size={size} color={color} />;
-    case 'edit':
-      return <Edit size={size} color={color} />;
-    case 'chevron-right':
-      return <ChevronRight size={size} color={color} />;
-    case 'close':
-      return <X size={size} color={color} />;
-    case 'user':
-      return <User size={size} color={color} />;
-    case 'settings':
-      return <Settings size={size} color={color} />;
-    default:
-      return null;
+const Icon: React.FC<IconProps> = ({ name, size = 24, color = '#000', style }) => {
+  const LucideIcon = Icons[name] as React.ComponentType<any>;
+  
+  if (!LucideIcon) {
+    console.error(`Icon with name ${name} not found`);
+    return null;
   }
+  
+  return <LucideIcon size={size} color={color} style={style} />;
 };
 
 export default Icon;

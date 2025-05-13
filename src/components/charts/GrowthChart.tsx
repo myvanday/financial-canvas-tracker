@@ -1,35 +1,28 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { VictoryLine, VictoryChart, VictoryTheme, VictoryAxis, VictoryArea } from 'victory-native';
+import { VictoryLine, VictoryChart, VictoryAxis, VictoryArea } from 'victory-native';
 import { colors } from '../../navigation/TabNavigator';
 
 interface GrowthChartProps {
-  data: Array<{
+  data: {
     date: Date;
     purchaseAmount: number;
     currentAmount: number;
-  }>;
-  timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All';
-  onTimeFrameChange: (timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => void;
+  }[];
+  timeFrame?: '1M' | '3M' | '6M' | '1Y' | 'All';
+  onTimeFrameChange?: (timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => void;
 }
 
 const GrowthChart: React.FC<GrowthChartProps> = ({ 
   data, 
-  timeFrame, 
-  onTimeFrameChange
+  timeFrame = '6M', 
+  onTimeFrameChange 
 }) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-  
   // Filter data based on timeframe
-  const filteredData = React.useMemo(() => {
+  const getFilteredData = () => {
+    if (data.length === 0) return [];
+    
     const now = new Date();
     let cutoffDate = new Date();
     
@@ -46,123 +39,124 @@ const GrowthChart: React.FC<GrowthChartProps> = ({
       case '1Y':
         cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
-      case 'All':
       default:
+        // All time - use all data
         return data;
     }
     
     return data.filter(item => new Date(item.date) >= cutoffDate);
-  }, [data, timeFrame]);
+  };
   
-  if (!filteredData.length) {
-    return (
-      <View style={styles.container}>
-        <Text>No data available</Text>
-      </View>
-    );
-  }
+  const filteredData = getFilteredData();
   
-  // Format data for Victory
-  const initialValueData = filteredData.map(item => ({
-    x: new Date(item.date),
-    y: item.purchaseAmount
-  }));
+  // Calculate percentage growth
+  const calculateGrowth = () => {
+    if (filteredData.length === 0) return 0;
+    
+    const firstValue = filteredData[0].purchaseAmount;
+    const lastValue = filteredData[filteredData.length - 1].currentAmount;
+    
+    if (firstValue === 0) return 0;
+    return ((lastValue - firstValue) / firstValue) * 100;
+  };
   
-  const currentValueData = filteredData.map(item => ({
-    x: new Date(item.date),
-    y: item.currentAmount
-  }));
+  const growth = calculateGrowth();
   
-  // Latest values
-  const latestData = filteredData[filteredData.length - 1];
-  const netGrowth = latestData.currentAmount - latestData.purchaseAmount;
-  const growthPercentage = (netGrowth / latestData.purchaseAmount) * 100;
+  // Format dates for display
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+  };
   
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.chartTitle}>Growth</Text>
-          <Text style={styles.netGrowth}>
-            {netGrowth >= 0 ? '+' : ''}{formatCurrency(netGrowth)}
-            <Text style={styles.percentageText}>
-              {' '}({growthPercentage >= 0 ? '+' : ''}{growthPercentage.toFixed(2)}%)
-            </Text>
+          <Text style={styles.title}>Growth</Text>
+          <Text style={[
+            styles.growthText, 
+            growth >= 0 ? styles.positiveGrowth : styles.negativeGrowth
+          ]}>
+            {growth >= 0 ? '+' : ''}{growth.toFixed(2)}%
           </Text>
         </View>
         
-        <View style={styles.timeSelectorContainer}>
-          {(['1M', '3M', '6M', '1Y', 'All'] as const).map((option) => (
+        <View style={styles.timeFrameSelector}>
+          {['1M', '3M', '6M', '1Y', 'All'].map((tf) => (
             <TouchableOpacity
-              key={option}
+              key={tf}
               style={[
-                styles.timeOption,
-                timeFrame === option && styles.selectedTimeOption
+                styles.timeFrameOption,
+                timeFrame === tf && styles.selectedTimeFrame
               ]}
-              onPress={() => onTimeFrameChange(option)}
+              onPress={() => onTimeFrameChange && onTimeFrameChange(tf as any)}
             >
               <Text style={[
-                styles.timeOptionText,
-                timeFrame === option && styles.selectedTimeOptionText
+                styles.timeFrameText,
+                timeFrame === tf && styles.selectedTimeFrameText
               ]}>
-                {option}
+                {tf}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
       
-      <View style={styles.chart}>
-        <VictoryChart
-          theme={VictoryTheme.material}
-          width={320}
-          height={220}
-          padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
-        >
-          <VictoryAxis
-            tickFormat={(x) => {
-              const date = new Date(x);
-              return `${date.getMonth() + 1}/${date.getDate()}`;
-            }}
-            style={{
-              axis: { stroke: colors.muted },
-              tickLabels: { fill: colors.muted, fontSize: 10 }
-            }}
-          />
-          <VictoryAxis
-            dependentAxis
-            tickFormat={(y) => `$${Math.round(y / 1000)}k`}
-            style={{
-              axis: { stroke: colors.muted },
-              tickLabels: { fill: colors.muted, fontSize: 10 }
-            }}
-          />
-          <VictoryArea
-            data={initialValueData}
-            style={{
-              data: { fill: colors.muted, opacity: 0.3, stroke: colors.muted }
-            }}
-          />
-          <VictoryLine
-            data={initialValueData}
-            style={{
-              data: { stroke: colors.muted, strokeWidth: 2 }
-            }}
-          />
-          <VictoryArea
-            data={currentValueData}
-            style={{
-              data: { fill: colors.primary, opacity: 0.3, stroke: colors.primary }
-            }}
-          />
-          <VictoryLine
-            data={currentValueData}
-            style={{
-              data: { stroke: colors.primary, strokeWidth: 2 }
-            }}
-          />
-        </VictoryChart>
-      </View>
+      {filteredData.length > 0 ? (
+        <View style={styles.chartContainer}>
+          <VictoryChart
+            height={220}
+            width={320}
+            padding={{ top: 10, bottom: 30, left: 40, right: 20 }}
+          >
+            {/* Purchase amount line */}
+            <VictoryLine
+              style={{
+                data: { stroke: colors.lightText, strokeWidth: 1, strokeDasharray: "4,4" },
+              }}
+              data={filteredData.map(d => ({
+                x: new Date(d.date),
+                y: d.purchaseAmount
+              }))}
+            />
+            
+            {/* Current amount area */}
+            <VictoryArea
+              style={{
+                data: { 
+                  fill: `${colors.primary}20`, 
+                  stroke: colors.primary,
+                  strokeWidth: 2 
+                }
+              }}
+              data={filteredData.map(d => ({
+                x: new Date(d.date),
+                y: d.currentAmount
+              }))}
+            />
+            
+            <VictoryAxis
+              tickFormat={(date) => formatDate(date)}
+              style={{
+                axis: { stroke: colors.border },
+                tickLabels: { fontSize: 10, fill: colors.lightText, padding: 5 }
+              }}
+            />
+            
+            <VictoryAxis
+              dependentAxis
+              tickFormat={(t) => `$${Math.round(t / 1000)}k`}
+              style={{
+                axis: { stroke: colors.border },
+                tickLabels: { fontSize: 10, fill: colors.lightText, padding: 5 }
+              }}
+            />
+          </VictoryChart>
+        </View>
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>No data available for selected time frame</Text>
+        </View>
+      )}
       
       <View style={styles.legendContainer}>
         <View style={styles.legendItem}>
@@ -170,7 +164,7 @@ const GrowthChart: React.FC<GrowthChartProps> = ({
           <Text style={styles.legendText}>Current Value</Text>
         </View>
         <View style={styles.legendItem}>
-          <View style={[styles.legendColor, { backgroundColor: colors.muted }]} />
+          <View style={[styles.legendColor, { backgroundColor: colors.lightText }]} />
           <Text style={styles.legendText}>Initial Value</Text>
         </View>
       </View>
@@ -180,57 +174,60 @@ const GrowthChart: React.FC<GrowthChartProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background,
-    borderRadius: 12,
-    padding: 16,
+    padding: 8,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 8,
   },
-  chartTitle: {
+  title: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text,
-    marginBottom: 4,
   },
-  netGrowth: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.primary,
-  },
-  percentageText: {
+  growthText: {
     fontSize: 14,
-    color: colors.text,
-    fontWeight: 'normal',
-  },
-  timeSelectorContainer: {
-    flexDirection: 'row',
-    backgroundColor: colors.cardBg,
-    borderRadius: 8,
-  },
-  timeOption: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  selectedTimeOption: {
-    backgroundColor: colors.primary,
-  },
-  timeOptionText: {
-    fontSize: 12,
-    color: colors.lightText,
-  },
-  selectedTimeOptionText: {
-    color: colors.background,
     fontWeight: '500',
   },
-  chart: {
-    marginVertical: 10,
+  positiveGrowth: {
+    color: colors.success,
+  },
+  negativeGrowth: {
+    color: colors.error,
+  },
+  timeFrameSelector: {
+    flexDirection: 'row',
+  },
+  timeFrameOption: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginLeft: 4,
+    borderRadius: 4,
+  },
+  selectedTimeFrame: {
+    backgroundColor: colors.primary,
+  },
+  timeFrameText: {
+    fontSize: 12,
+    color: colors.text,
+  },
+  selectedTimeFrameText: {
+    color: colors.background,
+  },
+  chartContainer: {
     height: 220,
     alignItems: 'center',
+  },
+  emptyState: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.lightText,
   },
   legendContainer: {
     flexDirection: 'row',
@@ -240,17 +237,17 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 10,
+    marginHorizontal: 8,
   },
   legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     marginRight: 4,
   },
   legendText: {
     fontSize: 12,
-    color: colors.text,
+    color: colors.lightText,
   },
 });
 
