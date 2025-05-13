@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { ArrowLeft, Edit, Pencil } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useFinance, Account } from '../context/FinanceContext';
 import GrowthChart from '../components/charts/GrowthChart';
@@ -57,7 +58,7 @@ const AccountDetail = () => {
     let balance = account.initialBalance;
     accountTransactions.forEach(tx => {
       if (new Date(tx.date) <= date) {
-        balance += tx.amount ?? 0;
+        balance += tx.amount;
       }
     });
     
@@ -149,18 +150,6 @@ const AccountDetail = () => {
     ) : null;
   };
 
-  // Get background gradient class based on asset type
-  const getAssetGradient = () => {
-    const gradients = {
-      money: 'bg-gradient-money',
-      savings: 'bg-gradient-savings',
-      investments: 'bg-gradient-investments',
-      physical: 'bg-gradient-physical'
-    };
-    
-    return gradients[account.assetType] || '';
-  };
-
   return (
     <div className="min-h-screen bg-finance-light-gray">
       <div className="max-w-lg mx-auto bg-white min-h-screen pb-20">
@@ -173,12 +162,18 @@ const AccountDetail = () => {
               </button>
               <h1 className="text-2xl font-bold">Account Details</h1>
             </div>
+            <button 
+              onClick={() => navigate('/add-account', { state: { account } })}
+              className="p-2 rounded-full hover:bg-white/20"
+            >
+              <Edit className="h-5 w-5" />
+            </button>
           </div>
         </header>
         
         <main className="p-4 pb-20">
-          {/* Account Summary with Edit Button */}
-          <div className={`p-6 rounded-xl mb-4 text-primary relative ${getAssetGradient()}`}>
+          {/* Account Summary */}
+          <div className={`p-6 rounded-xl mb-4 text-primary asset-${account.assetType}`}>
             <h2 className="text-xl font-bold">{account.name}</h2>
             {account.institution && (
               <p className="text-sm opacity-80">{account.institution}</p>
@@ -193,26 +188,6 @@ const AccountDetail = () => {
             
             {/* Render additional fields */}
             {renderAdditionalFields()}
-            
-            {/* More prominent edit button */}
-            <button 
-              onClick={() => navigate('/add-account', { state: { account } })}
-              className="absolute top-4 right-4 bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-colors"
-              aria-label="Edit account"
-            >
-              <Edit className="h-5 w-5 text-primary" />
-            </button>
-          </div>
-          
-          {/* Edit/Update CTA Button */}
-          <div className="mb-6">
-            <button 
-              onClick={() => navigate('/add-account', { state: { account } })}
-              className="w-full py-3 bg-primary text-white rounded-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors"
-            >
-              <Pencil className="h-4 w-4" />
-              <span>Update Balance or Details</span>
-            </button>
           </div>
           
           {/* Growth Chart */}
@@ -235,15 +210,15 @@ const AccountDetail = () => {
                 {accountTransactions.map((transaction) => (
                   <li key={transaction.id} className="flex justify-between items-center border-b pb-2">
                     <div>
-                      <p className="font-medium">{transaction.type || transaction.transactionType}</p>
+                      <p className="font-medium">{transaction.type}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(transaction.date).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className={`text-right ${(transaction.amount || 0) >= 0 ? 'growth-positive' : 'growth-negative'}`}>
+                    <div className={`text-right ${transaction.amount >= 0 ? 'growth-positive' : 'growth-negative'}`}>
                       <p className="font-medium">
-                        {(transaction.amount || 0) > 0 ? '+' : ''}
-                        {formatCurrency(transaction.amount || 0)}
+                        {transaction.amount > 0 ? '+' : ''}
+                        {formatCurrency(transaction.amount)}
                       </p>
                     </div>
                   </li>

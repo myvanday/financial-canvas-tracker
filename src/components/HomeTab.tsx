@@ -28,7 +28,6 @@ const HomeTab: React.FC<HomeTabProps> = ({ onAssetClick }) => {
   };
 
   const growth = calculateGrowth();
-  const interest = netWorth - totalInvested;
 
   // Group accounts by asset type
   const accountsByAssetType = accounts.reduce((groups, account) => {
@@ -42,20 +41,14 @@ const HomeTab: React.FC<HomeTabProps> = ({ onAssetClick }) => {
   return (
     <div className="tab-container pb-20">
       {/* Net Worth Section */}
-      <div className="mb-6 bg-gradient-primary text-white p-6 rounded-xl">
+      <div className="mb-6 bg-gradient-primary text-white p-4 rounded-xl">
         <h2 className="text-xl font-semibold mb-1">Your Net Worth</h2>
         <p className="text-3xl font-bold">{formatCurrency(netWorth)}</p>
-        <div className="flex justify-between items-center mt-3">
-          <div>
-            <p className="text-sm text-white/70">Initial Investment</p>
-            <p className="text-md font-medium">{formatCurrency(totalInvested)}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-white/70">Total Growth</p>
-            <p className={`text-md font-medium ${growth >= 0 ? '' : 'text-red-300'}`}>
-              {interest >= 0 ? '+' : ''}{formatCurrency(interest)} ({growth.toFixed(1)}%)
-            </p>
-          </div>
+        <div className="flex justify-between items-center mt-2">
+          <p className="text-sm">Invested: {formatCurrency(totalInvested)}</p>
+          <p className={`text-sm font-medium ${growth >= 0 ? '' : 'text-red-300'}`}>
+            {growth >= 0 ? '+' : ''}{growth.toFixed(2)}% growth
+          </p>
         </div>
       </div>
 

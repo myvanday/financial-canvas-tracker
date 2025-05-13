@@ -47,22 +47,10 @@ const AssetCard: React.FC<AssetCardProps> = ({
   };
   
   const growth = calculateGrowth();
-  
-  // Get background gradient class based on asset type
-  const getAssetGradient = () => {
-    const gradients = {
-      money: 'bg-gradient-money',
-      savings: 'bg-gradient-savings',
-      investments: 'bg-gradient-investments',
-      physical: 'bg-gradient-physical'
-    };
-    
-    return gradients[type] || '';
-  };
 
   return (
     <div 
-      className={`asset-card ${getAssetGradient()} cursor-pointer shadow-sm transition-all hover:shadow-md`}
+      className={`asset-card asset-${type} cursor-pointer`}
       onClick={() => onClickAsset(type)}
     >
       <div className="asset-card-header">
@@ -78,12 +66,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
         <div className="flex flex-col items-end">
           <span className="card-amount">{formatCurrency(totalBalance)}</span>
           <p className={`text-xs font-medium ${growth >= 0 ? 'growth-positive' : 'growth-negative'}`}>
-            {growth >= 0 ? '+' : ''}{growth.toFixed(1)}% growth
+            {growth >= 0 ? '+' : ''}{growth.toFixed(2)}% growth
           </p>
         </div>
-      </div>
-      <div className="flex justify-end">
-        <ChevronRight className="h-5 w-5 text-primary/70" />
       </div>
     </div>
   );

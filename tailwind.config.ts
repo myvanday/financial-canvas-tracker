@@ -69,19 +69,12 @@ export default {
                     'savings': '#A9D6E5',      // Pastel blue for Savings
                     'investments': '#FFD59E',  // Pastel orange for Investments
                     'physical': '#E6B8FF',     // Pastel purple for Physical Assets
-                    'dark-green': '#01362e',   // Dark green for buttons (from palette)
-                    'light-green': '#95e362',  // Light green accent (from palette)
-                    'light-gray': '#F4F4F6',   // Light gray (from palette)
-                    'gray': '#A8AAA6',         // Gray (from palette)
+                    'dark-green': '#01362e',   // Dark green for buttons
+                    'light-green': '#95e362',  // Light green accent
+                    'light-gray': '#F4F4F6',   // Light gray
+                    'gray': '#A8AAA6',         // Gray
                     'positive': '#34A853',     // For positive growth
                     'negative': '#EA4335',     // For negative growth
-                    'gradient-1-start': '#EDEDED', // Gradient 1 start (from palette)
-                    'gradient-1-mid': '#BFF1B7',   // Gradient 1 middle (from palette)
-                    'gradient-1-end': '#95E362',   // Gradient 1 end (from palette)
-                    'gradient-2-start': '#AAE6E7', // Gradient 2 start (from palette)
-                    'gradient-2-end': '#95E362',   // Gradient 2 end (from palette)
-                    'gradient-3-start': '#DAE3D7', // Gradient 3 start (from palette)
-                    'gradient-3-end': '#ACC3A5',   // Gradient 3 end (from palette)
                 }
 			},
 			borderRadius: {
@@ -122,9 +115,9 @@ export default {
                 'slide-in': 'slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
 			},
             backgroundImage: {
-                'gradient-money': 'linear-gradient(135deg, #EDEDED 0%, #BFF1B7 50%, #95E362 100%)',
-                'gradient-savings': 'linear-gradient(135deg, #AAE6E7 0%, #95E362 100%)',
-                'gradient-investments': 'linear-gradient(135deg, #DAE3D7 0%, #ACC3A5 100%)',
+                'gradient-money': 'linear-gradient(135deg, #D1F0C2 0%, #B4E4A5 100%)',
+                'gradient-savings': 'linear-gradient(135deg, #C1E3F0 0%, #A9D6E5 100%)',
+                'gradient-investments': 'linear-gradient(135deg, #FFE9BE 0%, #FFD59E 100%)',
                 'gradient-physical': 'linear-gradient(135deg, #F2D5FF 0%, #E6B8FF 100%)',
                 'gradient-primary': 'linear-gradient(135deg, #01362e 0%, #0A5043 100%)',
             }
