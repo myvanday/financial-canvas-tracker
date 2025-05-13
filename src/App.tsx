@@ -1,34 +1,30 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { FinanceProvider } from "./context/FinanceContext";
-import Index from "./pages/Index";
-import AddAccountPage from "./pages/AddAccount";
-import AccountDetail from "./pages/AccountDetail";
-import NotFound from "./pages/NotFound";
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { StatusBar } from 'react-native';
+import { FinanceProvider } from './context/FinanceContext';
+import TabNavigator from './navigation/TabNavigator';
+import AccountDetailScreen from './screens/AccountDetailScreen';
+import AddAccountScreen from './screens/AddAccountScreen';
 
-const queryClient = new QueryClient();
+const Stack = createStackNavigator();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <FinanceProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/add-account" element={<AddAccountPage />} />
-            <Route path="/account/:accountId" element={<AccountDetail />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </FinanceProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <NavigationContainer>
+    <StatusBar barStyle="light-content" />
+    <FinanceProvider>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false
+        }}
+      >
+        <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="AddAccount" component={AddAccountScreen} />
+        <Stack.Screen name="AccountDetail" component={AccountDetailScreen} />
+      </Stack.Navigator>
+    </FinanceProvider>
+  </NavigationContainer>
 );
 
 export default App;

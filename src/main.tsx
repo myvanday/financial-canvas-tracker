@@ -1,5 +1,5 @@
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
 
-createRoot(document.getElementById("root")!).render(<App />);
+import { AppRegistry } from 'react-native';
+import App from './App';
+
+AppRegistry.registerComponent('NetWorthTracker', () => App);

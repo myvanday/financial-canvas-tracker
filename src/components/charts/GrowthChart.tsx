@@ -1,167 +1,257 @@
 
-import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { HistoricalNetWorth } from '../../context/FinanceContext';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { VictoryLine, VictoryChart, VictoryTheme, VictoryAxis, VictoryArea } from 'victory-native';
+import { colors } from '../../navigation/TabNavigator';
 
 interface GrowthChartProps {
-  data: HistoricalNetWorth[];
-  timeFrame?: '1M' | '3M' | '6M' | '1Y' | 'All';
-  onTimeFrameChange?: (timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => void;
-  showTimeSelector?: boolean;
+  data: Array<{
+    date: Date;
+    purchaseAmount: number;
+    currentAmount: number;
+  }>;
+  timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All';
+  onTimeFrameChange: (timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => void;
 }
 
 const GrowthChart: React.FC<GrowthChartProps> = ({ 
   data, 
-  timeFrame: externalTimeFrame, 
-  onTimeFrameChange,
-  showTimeSelector = true
+  timeFrame, 
+  onTimeFrameChange
 }) => {
-  const [internalTimeFrame, setInternalTimeFrame] = useState<'1M' | '3M' | '6M' | '1Y' | 'All'>('6M');
-  
-  const timeFrame = externalTimeFrame || internalTimeFrame;
-  
-  const handleTimeFrameChange = (newTimeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => {
-    if (onTimeFrameChange) {
-      onTimeFrameChange(newTimeFrame);
-    } else {
-      setInternalTimeFrame(newTimeFrame);
-    }
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
   };
-
-  const getFilteredData = () => {
-    const today = new Date();
+  
+  // Filter data based on timeframe
+  const filteredData = React.useMemo(() => {
+    const now = new Date();
     let cutoffDate = new Date();
     
-    switch (timeFrame) {
+    switch(timeFrame) {
       case '1M':
-        cutoffDate.setMonth(today.getMonth() - 1);
+        cutoffDate.setMonth(now.getMonth() - 1);
         break;
       case '3M':
-        cutoffDate.setMonth(today.getMonth() - 3);
+        cutoffDate.setMonth(now.getMonth() - 3);
         break;
       case '6M':
-        cutoffDate.setMonth(today.getMonth() - 6);
+        cutoffDate.setMonth(now.getMonth() - 6);
         break;
       case '1Y':
-        cutoffDate.setFullYear(today.getFullYear() - 1);
+        cutoffDate.setFullYear(now.getFullYear() - 1);
         break;
+      case 'All':
       default:
         return data;
     }
     
     return data.filter(item => new Date(item.date) >= cutoffDate);
-  };
+  }, [data, timeFrame]);
   
-  const filteredData = getFilteredData();
+  if (!filteredData.length) {
+    return (
+      <View style={styles.container}>
+        <Text>No data available</Text>
+      </View>
+    );
+  }
   
-  // Format data for the chart
-  const chartData = filteredData.map(item => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    currentValue: item.currentAmount,
-    purchasedValue: item.purchaseAmount,
-    interest: item.currentAmount - item.purchaseAmount
+  // Format data for Victory
+  const initialValueData = filteredData.map(item => ({
+    x: new Date(item.date),
+    y: item.purchaseAmount
   }));
   
-  // Calculate growth percentage
-  const growth = filteredData.length >= 2 
-    ? ((filteredData[filteredData.length - 1].currentAmount - filteredData[0].currentAmount) / filteredData[0].currentAmount) * 100
-    : 0;
-
-  // Calculate interest (difference between purchase and current)
-  const latestData = filteredData[filteredData.length - 1];
-  const interestAmount = latestData ? latestData.currentAmount - latestData.purchaseAmount : 0;
-  const interestPercentage = latestData ? (interestAmount / latestData.purchaseAmount) * 100 : 0;
+  const currentValueData = filteredData.map(item => ({
+    x: new Date(item.date),
+    y: item.currentAmount
+  }));
   
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
+  // Latest values
+  const latestData = filteredData[filteredData.length - 1];
+  const netGrowth = latestData.currentAmount - latestData.purchaseAmount;
+  const growthPercentage = (netGrowth / latestData.purchaseAmount) * 100;
+  
   return (
-    <div className="w-full bg-white p-4 rounded-xl shadow-sm border">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Net Worth Growth</h3>
-        <div className="text-right">
-          <p className={`text-lg font-bold ${growth >= 0 ? 'growth-positive' : 'growth-negative'}`}>
-            {growth >= 0 ? '+' : ''}{growth.toFixed(2)}%
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Gain: {formatCurrency(interestAmount)} ({interestPercentage.toFixed(2)}%)
-          </p>
-        </div>
-      </div>
-      
-      {showTimeSelector && (
-        <div className="time-selector-container mb-4">
-          {(['1M', '3M', '6M', '1Y', 'All'] as const).map((frame) => (
-            <button
-              key={frame}
-              className={`time-selector-button ${
-                timeFrame === frame
-                  ? 'time-selector-active'
-                  : 'time-selector-inactive'
-              }`}
-              onClick={() => handleTimeFrameChange(frame)}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.chartTitle}>Growth</Text>
+          <Text style={styles.netGrowth}>
+            {netGrowth >= 0 ? '+' : ''}{formatCurrency(netGrowth)}
+            <Text style={styles.percentageText}>
+              {' '}({growthPercentage >= 0 ? '+' : ''}{growthPercentage.toFixed(2)}%)
+            </Text>
+          </Text>
+        </View>
+        
+        <View style={styles.timeSelectorContainer}>
+          {(['1M', '3M', '6M', '1Y', 'All'] as const).map((option) => (
+            <TouchableOpacity
+              key={option}
+              style={[
+                styles.timeOption,
+                timeFrame === option && styles.selectedTimeOption
+              ]}
+              onPress={() => onTimeFrameChange(option)}
             >
-              {frame}
-            </button>
+              <Text style={[
+                styles.timeOptionText,
+                timeFrame === option && styles.selectedTimeOptionText
+              ]}>
+                {option}
+              </Text>
+            </TouchableOpacity>
           ))}
-        </div>
-      )}
+        </View>
+      </View>
       
-      <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={chartData}
-            margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
-          >
-            <XAxis 
-              dataKey="date" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 10 }}
-            />
-            <YAxis 
-              domain={['dataMin - 10000', 'dataMax + 10000']} 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 10 }} 
-              tickFormatter={formatCurrency}
-            />
-            <Tooltip 
-              formatter={(value) => [formatCurrency(value as number), '']}
-              labelFormatter={(label) => `Date: ${label}`}
-              contentStyle={{ borderRadius: '0.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-            />
-            <Legend />
-            <Line 
-              name="Current Value"
-              type="monotone" 
-              dataKey="currentValue" 
-              stroke="#01362e" 
-              strokeWidth={2} 
-              dot={false}
-              activeDot={{ r: 6, fill: '#01362e' }}
-            />
-            <Line 
-              name="Purchased Value"
-              type="monotone" 
-              dataKey="purchasedValue" 
-              stroke="#95e362" 
-              strokeWidth={2} 
-              dot={false}
-              activeDot={{ r: 6, fill: '#95e362' }}
-              strokeDasharray="5 5"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
+      <View style={styles.chart}>
+        <VictoryChart
+          theme={VictoryTheme.material}
+          width={320}
+          height={220}
+          padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
+        >
+          <VictoryAxis
+            tickFormat={(x) => {
+              const date = new Date(x);
+              return `${date.getMonth() + 1}/${date.getDate()}`;
+            }}
+            style={{
+              axis: { stroke: colors.muted },
+              tickLabels: { fill: colors.muted, fontSize: 10 }
+            }}
+          />
+          <VictoryAxis
+            dependentAxis
+            tickFormat={(y) => `$${Math.round(y / 1000)}k`}
+            style={{
+              axis: { stroke: colors.muted },
+              tickLabels: { fill: colors.muted, fontSize: 10 }
+            }}
+          />
+          <VictoryArea
+            data={initialValueData}
+            style={{
+              data: { fill: colors.muted, opacity: 0.3, stroke: colors.muted }
+            }}
+          />
+          <VictoryLine
+            data={initialValueData}
+            style={{
+              data: { stroke: colors.muted, strokeWidth: 2 }
+            }}
+          />
+          <VictoryArea
+            data={currentValueData}
+            style={{
+              data: { fill: colors.primary, opacity: 0.3, stroke: colors.primary }
+            }}
+          />
+          <VictoryLine
+            data={currentValueData}
+            style={{
+              data: { stroke: colors.primary, strokeWidth: 2 }
+            }}
+          />
+        </VictoryChart>
+      </View>
+      
+      <View style={styles.legendContainer}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: colors.primary }]} />
+          <Text style={styles.legendText}>Current Value</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendColor, { backgroundColor: colors.muted }]} />
+          <Text style={styles.legendText}>Initial Value</Text>
+        </View>
+      </View>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.background,
+    borderRadius: 12,
+    padding: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  chartTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  netGrowth: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.primary,
+  },
+  percentageText: {
+    fontSize: 14,
+    color: colors.text,
+    fontWeight: 'normal',
+  },
+  timeSelectorContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.cardBg,
+    borderRadius: 8,
+  },
+  timeOption: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  selectedTimeOption: {
+    backgroundColor: colors.primary,
+  },
+  timeOptionText: {
+    fontSize: 12,
+    color: colors.lightText,
+  },
+  selectedTimeOptionText: {
+    color: colors.background,
+    fontWeight: '500',
+  },
+  chart: {
+    marginVertical: 10,
+    height: 220,
+    alignItems: 'center',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 4,
+  },
+  legendText: {
+    fontSize: 12,
+    color: colors.text,
+  },
+});
 
 export default GrowthChart;
