@@ -1,77 +1,58 @@
 
-import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { HistoricalNetWorth } from '../../context/FinanceContext';
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface GrowthChartProps {
-  data: HistoricalNetWorth[];
-  timeFrame?: '1M' | '3M' | '6M' | '1Y' | 'All';
+  data: Array<{
+    date: Date;
+    purchaseAmount: number;
+    currentAmount: number;
+  }>;
+  timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All';
   onTimeFrameChange?: (timeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => void;
-  showTimeSelector?: boolean;
 }
 
-const GrowthChart: React.FC<GrowthChartProps> = ({ 
-  data, 
-  timeFrame: externalTimeFrame, 
-  onTimeFrameChange,
-  showTimeSelector = true
-}) => {
-  const [internalTimeFrame, setInternalTimeFrame] = useState<'1M' | '3M' | '6M' | '1Y' | 'All'>('6M');
-  
-  const timeFrame = externalTimeFrame || internalTimeFrame;
-  
-  const handleTimeFrameChange = (newTimeFrame: '1M' | '3M' | '6M' | '1Y' | 'All') => {
-    if (onTimeFrameChange) {
-      onTimeFrameChange(newTimeFrame);
-    } else {
-      setInternalTimeFrame(newTimeFrame);
-    }
-  };
+const GrowthChart: React.FC<GrowthChartProps> = ({ data, timeFrame, onTimeFrameChange }) => {
+  const [chartData, setChartData] = useState<Array<{
+    date: string;
+    'Initial Value': number;
+    'Current Value': number;
+  }>>([]);
 
-  const getFilteredData = () => {
-    const today = new Date();
-    let cutoffDate = new Date();
-    
-    switch (timeFrame) {
-      case '1M':
-        cutoffDate.setMonth(today.getMonth() - 1);
-        break;
-      case '3M':
-        cutoffDate.setMonth(today.getMonth() - 3);
-        break;
-      case '6M':
-        cutoffDate.setMonth(today.getMonth() - 6);
-        break;
-      case '1Y':
-        cutoffDate.setFullYear(today.getFullYear() - 1);
-        break;
-      default:
-        return data;
-    }
-    
-    return data.filter(item => new Date(item.date) >= cutoffDate);
-  };
-  
-  const filteredData = getFilteredData();
-  
-  // Format data for the chart
-  const chartData = filteredData.map(item => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    currentValue: item.currentAmount,
-    purchasedValue: item.purchaseAmount,
-    interest: item.currentAmount - item.purchaseAmount
-  }));
-  
-  // Calculate growth percentage
-  const growth = filteredData.length >= 2 
-    ? ((filteredData[filteredData.length - 1].currentAmount - filteredData[0].currentAmount) / filteredData[0].currentAmount) * 100
-    : 0;
+  useEffect(() => {
+    if (!data) return;
 
-  // Calculate interest (difference between purchase and current)
-  const latestData = filteredData[filteredData.length - 1];
-  const interestAmount = latestData ? latestData.currentAmount - latestData.purchaseAmount : 0;
-  const interestPercentage = latestData ? (interestAmount / latestData.purchaseAmount) * 100 : 0;
-  
+    // Filter data based on timeFrame
+    const now = new Date();
+    const filteredData = data.filter(item => {
+      const itemDate = new Date(item.date);
+      
+      switch(timeFrame) {
+        case '1M':
+          return now.getTime() - itemDate.getTime() <= 30 * 24 * 60 * 60 * 1000;
+        case '3M':
+          return now.getTime() - itemDate.getTime() <= 90 * 24 * 60 * 60 * 1000;
+        case '6M':
+          return now.getTime() - itemDate.getTime() <= 180 * 24 * 60 * 60 * 1000;
+        case '1Y':
+          return now.getTime() - itemDate.getTime() <= 365 * 24 * 60 * 60 * 1000;
+        case 'All':
+        default:
+          return true;
+      }
+    });
+
+    // Format data for the chart
+    const formattedData = filteredData.map(item => ({
+      date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      'Initial Value': item.purchaseAmount,
+      'Current Value': item.currentAmount,
+    }));
+    
+    setChartData(formattedData);
+  }, [data, timeFrame]);
+
+  // Format currency for tooltip
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -81,81 +62,81 @@ const GrowthChart: React.FC<GrowthChartProps> = ({
     }).format(value);
   };
 
-  return (
-    <div className="w-full bg-white p-4 rounded-xl shadow-sm border">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Net Worth Growth</h3>
-        <div className="text-right">
-          <p className={`text-lg font-bold ${growth >= 0 ? 'growth-positive' : 'growth-negative'}`}>
-            {growth >= 0 ? '+' : ''}{growth.toFixed(2)}%
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 rounded-lg shadow-md border">
+          <p className="text-sm font-semibold">{label}</p>
+          <p className="text-sm text-primary">
+            Initial Value: {formatCurrency(payload[0].value)}
           </p>
-          <p className="text-xs text-muted-foreground">
-            Gain: {formatCurrency(interestAmount)} ({interestPercentage.toFixed(2)}%)
+          <p className="text-sm text-finance-positive">
+            Current Value: {formatCurrency(payload[1].value)}
+          </p>
+          <p className="text-xs mt-1">
+            Growth: {((payload[1].value - payload[0].value) / payload[0].value * 100).toFixed(1)}%
           </p>
         </div>
-      </div>
-      
-      {showTimeSelector && (
-        <div className="time-selector-container mb-4">
-          {(['1M', '3M', '6M', '1Y', 'All'] as const).map((frame) => (
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border p-4">
+      <div className="flex justify-between items-center mb-3">
+        <h2 className="font-semibold">Growth</h2>
+        
+        {/* Integrated Time Frame Selector */}
+        <div className="time-selector-container">
+          {(['1M', '3M', '6M', '1Y', 'All'] as const).map((tf) => (
             <button
-              key={frame}
-              className={`time-selector-button ${
-                timeFrame === frame
-                  ? 'time-selector-active'
-                  : 'time-selector-inactive'
-              }`}
-              onClick={() => handleTimeFrameChange(frame)}
+              key={tf}
+              className={`time-selector-button ${timeFrame === tf ? 'time-selector-active' : 'time-selector-inactive'}`}
+              onClick={() => onTimeFrameChange && onTimeFrameChange(tf)}
             >
-              {frame}
+              {tf}
             </button>
           ))}
         </div>
-      )}
-      
-      <div className="h-48">
+      </div>
+
+      <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={chartData}
-            margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
           >
             <XAxis 
               dataKey="date" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 10 }}
+              tick={{ fontSize: 12 }} 
+              axisLine={false}
+              tickLine={false}
             />
             <YAxis 
-              domain={['dataMin - 10000', 'dataMax + 10000']} 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 10 }} 
-              tickFormatter={formatCurrency}
+              tick={{ fontSize: 12 }} 
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(value) => `$${value.toLocaleString()}`}
             />
-            <Tooltip 
-              formatter={(value) => [formatCurrency(value as number), '']}
-              labelFormatter={(label) => `Date: ${label}`}
-              contentStyle={{ borderRadius: '0.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
-            />
-            <Legend />
+            <Tooltip content={<CustomTooltip />} />
             <Line 
-              name="Current Value"
               type="monotone" 
-              dataKey="currentValue" 
+              name="Initial Value"
+              dataKey="Initial Value" 
               stroke="#01362e" 
-              strokeWidth={2} 
+              strokeWidth={2}
               dot={false}
-              activeDot={{ r: 6, fill: '#01362e' }}
+              activeDot={{ r: 6 }}
             />
             <Line 
-              name="Purchased Value"
               type="monotone" 
-              dataKey="purchasedValue" 
+              name="Current Value"
+              dataKey="Current Value" 
               stroke="#95e362" 
-              strokeWidth={2} 
+              strokeWidth={2}
               dot={false}
-              activeDot={{ r: 6, fill: '#95e362' }}
-              strokeDasharray="5 5"
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -4,10 +4,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useFinance, Account, AssetType, AssetSubType } from '../context/FinanceContext';
 import { useToast } from '../hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
-
-interface AddAccountPageProps {
-  existingAccount?: Account;
-}
+import InvestmentSelector from '../components/InvestmentSelector';
+import { InvestmentOption } from '../data/investmentOptions';
 
 const AddAccountPage = () => {
   const { addAccount, updateAccount, deleteAccount } = useFinance();
@@ -32,7 +30,20 @@ const AddAccountPage = () => {
   const [pricePerUnit, setPricePerUnit] = useState<string>(existingAccount?.pricePerUnit?.toString() || '');
   const [rentalIncome, setRentalIncome] = useState<string>(existingAccount?.rentalIncome?.toString() || '');
 
+  // Investment selector state
+  const [showInvestmentSelector, setShowInvestmentSelector] = useState(false);
+  const [investmentType, setInvestmentType] = useState<'stock' | 'fund' | 'crypto'>('stock');
+  
   const isEditing = !!existingAccount;
+
+  const handleInvestmentSelect = (option: InvestmentOption) => {
+    setItemName(option.symbol);
+    setInstitution(option.institution || '');
+    if (option.currentPrice) {
+      setPricePerUnit(option.currentPrice.toString());
+    }
+    setShowInvestmentSelector(false);
+  };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -150,6 +161,12 @@ const AddAccountPage = () => {
     }
   };
   
+  // Helper function to open investment selector based on investment type
+  const openInvestmentSelector = (type: 'stock' | 'fund' | 'crypto') => {
+    setInvestmentType(type);
+    setShowInvestmentSelector(true);
+  };
+  
   // Helper function to render asset type specific fields
   const renderAssetTypeFields = () => {
     if (assetType === 'savings') {
@@ -190,17 +207,60 @@ const AddAccountPage = () => {
         <>
           <div>
             <label htmlFor="itemName" className="block text-sm font-medium mb-1">
-              {assetSubType === 'stocks' ? 'Stock Name' : 
+              {assetSubType === 'stocks' ? 'Stock Symbol' : 
                assetSubType === 'bonds' ? 'Bond Name' :
-               assetSubType === 'funds' ? 'Fund Name' :
-               assetSubType === 'crypto' ? 'Cryptocurrency Name' : 'Item Name'}
+               assetSubType === 'funds' ? 'Fund Symbol' :
+               assetSubType === 'crypto' ? 'Cryptocurrency Symbol' : 'Item Name'}
+            </label>
+            
+            {/* Investment selector based on type */}
+            {(assetSubType === 'stocks' || assetSubType === 'funds' || assetSubType === 'crypto') ? (
+              <div className="flex space-x-2">
+                <input
+                  id="itemName"
+                  type="text"
+                  value={itemName}
+                  onChange={(e) => setItemName(e.target.value)}
+                  placeholder={assetSubType === 'stocks' ? "e.g., AAPL" : 
+                               assetSubType === 'funds' ? "e.g., VOO" : 
+                               "e.g., BTC"}
+                  className="w-full p-2 border rounded-md"
+                  readOnly
+                />
+                <button
+                  type="button"
+                  className="py-2 px-4 bg-primary text-white rounded-md"
+                  onClick={() => {
+                    if (assetSubType === 'stocks') openInvestmentSelector('stock');
+                    else if (assetSubType === 'funds') openInvestmentSelector('fund');
+                    else if (assetSubType === 'crypto') openInvestmentSelector('crypto');
+                  }}
+                >
+                  Browse
+                </button>
+              </div>
+            ) : (
+              <input
+                id="itemName"
+                type="text"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                placeholder="Enter name"
+                className="w-full p-2 border rounded-md"
+              />
+            )}
+          </div>
+          
+          <div>
+            <label htmlFor="institution" className="block text-sm font-medium mb-1">
+              Institution
             </label>
             <input
-              id="itemName"
+              id="institution"
               type="text"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              placeholder="e.g., AAPL"
+              value={institution}
+              onChange={(e) => setInstitution(e.target.value)}
+              placeholder="e.g., NASDAQ"
               className="w-full p-2 border rounded-md"
             />
           </div>
@@ -304,207 +364,217 @@ const AddAccountPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-finance-light-gray">
-      <div className="max-w-lg mx-auto bg-white min-h-screen pb-20">
-        {/* Header */}
-        <header className="sticky top-0 bg-gradient-primary text-white p-4 z-10">
-          <div className="flex items-center">
-            <button 
-              onClick={() => navigate(-1)}
-              className="mr-2"
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </button>
-            <h1 className="text-2xl font-bold">{isEditing ? 'Edit Account' : 'Add New Account'}</h1>
-          </div>
-        </header>
-        
-        <main className="p-4">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {!isEditing && (
-              <>
-                <div>
-                  <label htmlFor="asset-type" className="block text-sm font-medium mb-1">
-                    Asset Type
-                  </label>
-                  <select
-                    id="asset-type"
-                    value={assetType}
-                    onChange={(e) => {
-                      setAssetType(e.target.value as AssetType);
-                      // Reset subtype when asset type changes
-                      const subTypes = getSubTypeOptions();
-                      if (subTypes.length > 0) {
-                        setAssetSubType(subTypes[0].value);
-                      }
-                    }}
-                    className="w-full p-2 border rounded-md"
-                  >
-                    <option value="money">💵 Money</option>
-                    <option value="savings">💰 Savings</option>
-                    <option value="investments">📈 Investments</option>
-                    <option value="physical">🏠 Physical Assets</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="asset-subtype" className="block text-sm font-medium mb-1">
-                    Asset Sub-Type
-                  </label>
-                  <select
-                    id="asset-subtype"
-                    value={assetSubType}
-                    onChange={(e) => setAssetSubType(e.target.value as AssetSubType)}
-                    className="w-full p-2 border rounded-md"
-                  >
-                    {getSubTypeOptions().map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-            
-            <div>
-              <label htmlFor="account-name" className="block text-sm font-medium mb-1">
-                Account Name
-              </label>
-              <input
-                id="account-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Chase Checking"
-                className="w-full p-2 border rounded-md"
-                disabled={isEditing}
-                required
-              />
+    <>
+      {showInvestmentSelector && (
+        <InvestmentSelector 
+          type={investmentType}
+          onSelect={handleInvestmentSelect}
+          onClose={() => setShowInvestmentSelector(false)}
+        />
+      )}
+
+      <div className="min-h-screen bg-finance-light-gray">
+        <div className="max-w-lg mx-auto bg-white min-h-screen pb-20">
+          {/* Header */}
+          <header className="sticky top-0 bg-gradient-primary text-white p-4 z-10">
+            <div className="flex items-center">
+              <button 
+                onClick={() => navigate(-1)}
+                className="mr-2"
+              >
+                <ArrowLeft className="h-6 w-6" />
+              </button>
+              <h1 className="text-2xl font-bold">{isEditing ? 'Edit Account' : 'Add New Account'}</h1>
             </div>
-            
-            {isEditing && (
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Transaction Type
-                </label>
-                <div className="flex space-x-2">
-                  {['buy', 'sell', 'update'].map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      className={`flex-1 py-2 px-3 border rounded-md text-center ${
-                        transactionType === type 
-                          ? 'border-primary bg-primary/5 text-primary' 
-                          : 'border-border'
-                      }`}
-                      onClick={() => setTransactionType(type as 'buy' | 'sell' | 'update')}
+          </header>
+          
+          <main className="p-4">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {!isEditing && (
+                <>
+                  <div>
+                    <label htmlFor="asset-type" className="block text-sm font-medium mb-1">
+                      Asset Type
+                    </label>
+                    <select
+                      id="asset-type"
+                      value={assetType}
+                      onChange={(e) => {
+                        setAssetType(e.target.value as AssetType);
+                        // Reset subtype when asset type changes
+                        const subTypes = getSubTypeOptions();
+                        if (subTypes.length > 0) {
+                          setAssetSubType(subTypes[0].value);
+                        }
+                      }}
+                      className="w-full p-2 border rounded-md"
                     >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            <div>
-              <label htmlFor="account-balance" className="block text-sm font-medium mb-1">
-                {isEditing 
-                  ? (transactionType === 'buy' 
-                      ? 'Purchase Amount' 
-                      : transactionType === 'sell' 
-                        ? 'Sale Amount' 
-                        : 'New Balance')
-                  : 'Balance'
-                }
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2">$</span>
+                      <option value="money">💵 Money</option>
+                      <option value="savings">💰 Savings</option>
+                      <option value="investments">📈 Investments</option>
+                      <option value="physical">🏠 Physical Assets</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="asset-subtype" className="block text-sm font-medium mb-1">
+                      Asset Sub-Type
+                    </label>
+                    <select
+                      id="asset-subtype"
+                      value={assetSubType}
+                      onChange={(e) => setAssetSubType(e.target.value as AssetSubType)}
+                      className="w-full p-2 border rounded-md"
+                    >
+                      {getSubTypeOptions().map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+              
+              <div>
+                <label htmlFor="account-name" className="block text-sm font-medium mb-1">
+                  Account Name
+                </label>
                 <input
-                  id="account-balance"
-                  type="number"
-                  value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full p-2 pl-6 border rounded-md"
-                  min="0"
-                  step="0.01"
+                  id="account-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., Chase Checking"
+                  className="w-full p-2 border rounded-md"
+                  disabled={isEditing}
                   required
                 />
               </div>
-            </div>
-
-            <div>
-              <label htmlFor="currency" className="block text-sm font-medium mb-1">
-                Currency
-              </label>
-              <select
-                id="currency"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="JPY">JPY (¥)</option>
-                <option value="AUD">AUD ($)</option>
-                <option value="CAD">CAD ($)</option>
-                <option value="CHF">CHF (Fr)</option>
-                <option value="CNY">CNY (¥)</option>
-                <option value="INR">INR (₹)</option>
-              </select>
-            </div>
-            
-            {!isEditing && (
+              
+              {isEditing && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Transaction Type
+                  </label>
+                  <div className="flex space-x-2">
+                    {['buy', 'sell', 'update'].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        className={`flex-1 py-2 px-3 border rounded-md text-center ${
+                          transactionType === type 
+                            ? 'border-primary bg-primary/5 text-primary' 
+                            : 'border-border'
+                        }`}
+                        onClick={() => setTransactionType(type as 'buy' | 'sell' | 'update')}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div>
-                <label htmlFor="institution" className="block text-sm font-medium mb-1">
-                  Institution (Optional)
+                <label htmlFor="account-balance" className="block text-sm font-medium mb-1">
+                  {isEditing 
+                    ? (transactionType === 'buy' 
+                        ? 'Purchase Amount' 
+                        : transactionType === 'sell' 
+                          ? 'Sale Amount' 
+                          : 'New Balance')
+                    : 'Balance'
+                  }
                 </label>
-                <input
-                  id="institution"
-                  type="text"
-                  value={institution}
-                  onChange={(e) => setInstitution(e.target.value)}
-                  placeholder="e.g., Chase Bank"
-                  className="w-full p-2 border rounded-md"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-2">$</span>
+                  <input
+                    id="account-balance"
+                    type="number"
+                    value={balance}
+                    onChange={(e) => setBalance(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full p-2 pl-6 border rounded-md"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
               </div>
-            )}
-            
-            {/* Render asset-type specific fields */}
-            {renderAssetTypeFields()}
-            
-            <div className="flex space-x-3 pt-4">
-              {isEditing ? (
-                <>
-                  <button 
-                    type="button"
-                    className="flex-1 py-3 border border-destructive text-destructive rounded-lg hover:bg-destructive/5"
-                    onClick={handleDelete}
-                  >
-                    Delete
-                  </button>
+
+              <div>
+                <label htmlFor="currency" className="block text-sm font-medium mb-1">
+                  Currency
+                </label>
+                <select
+                  id="currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full p-2 border rounded-md"
+                >
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="JPY">JPY (¥)</option>
+                  <option value="AUD">AUD ($)</option>
+                  <option value="CAD">CAD ($)</option>
+                  <option value="CHF">CHF (Fr)</option>
+                  <option value="CNY">CNY (¥)</option>
+                  <option value="INR">INR (₹)</option>
+                </select>
+              </div>
+              
+              {!isEditing && (
+                <div>
+                  <label htmlFor="institution" className="block text-sm font-medium mb-1">
+                    Institution (Optional)
+                  </label>
+                  <input
+                    id="institution"
+                    type="text"
+                    value={institution}
+                    onChange={(e) => setInstitution(e.target.value)}
+                    placeholder="e.g., Chase Bank"
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+              )}
+              
+              {/* Render asset-type specific fields */}
+              {renderAssetTypeFields()}
+              
+              <div className="flex space-x-3 pt-4">
+                {isEditing ? (
+                  <>
+                    <button 
+                      type="button"
+                      className="flex-1 py-3 border border-destructive text-destructive rounded-lg hover:bg-destructive/5"
+                      onClick={handleDelete}
+                    >
+                      Delete
+                    </button>
+                    <button 
+                      type="submit"
+                      className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90"
+                    >
+                      Save Changes
+                    </button>
+                  </>
+                ) : (
                   <button 
                     type="submit"
-                    className="flex-1 py-3 bg-primary text-white rounded-lg hover:bg-primary/90"
+                    className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90"
                   >
-                    Save Changes
+                    Add Account
                   </button>
-                </>
-              ) : (
-                <button 
-                  type="submit"
-                  className="w-full py-3 bg-primary text-white rounded-lg hover:bg-primary/90"
-                >
-                  Add Account
-                </button>
-              )}
-            </div>
-          </form>
-        </main>
+                )}
+              </div>
+            </form>
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

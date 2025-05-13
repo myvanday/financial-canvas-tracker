@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Home, PieChart, History, Plus } from 'lucide-react';
+import { Home, PieChart, History, Plus, Settings, User } from 'lucide-react';
 import { useFinance, AssetType, Account } from '../context/FinanceContext';
 import { useNavigate } from 'react-router-dom';
 import HomeTab from './HomeTab';
@@ -27,6 +27,16 @@ const Layout: React.FC = () => {
     navigate('/add-account');
   };
 
+  const handleSettingsClick = () => {
+    // TODO: Implement settings functionality when needed
+    alert('Settings panel will be implemented soon');
+  };
+
+  const handleAccountSettingsClick = () => {
+    // TODO: Implement account settings functionality when needed
+    alert('Account settings will be implemented soon');
+  };
+
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'home':
@@ -46,7 +56,25 @@ const Layout: React.FC = () => {
       <div className="max-w-lg mx-auto bg-white min-h-screen pb-20">
         {/* Header */}
         <header className="sticky top-0 bg-gradient-primary text-white p-4 z-10">
-          <h1 className="text-2xl font-bold text-center">Net Worth Tracker</h1>
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">Net Worth Tracker</h1>
+            <div className="flex space-x-3">
+              <button 
+                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                onClick={handleAccountSettingsClick}
+                aria-label="Account settings"
+              >
+                <User className="h-5 w-5" />
+              </button>
+              <button 
+                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                onClick={handleSettingsClick}
+                aria-label="App settings"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
         </header>
         
         {/* Tab Content */}
