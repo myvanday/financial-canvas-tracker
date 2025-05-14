@@ -1,17 +1,27 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useFinance, Account } from '../context/FinanceContext';
 import { formatDistanceToNow } from 'date-fns';
 import GrowthChart from '../components/charts/GrowthChart';
 import Icon from '../components/Icon';
 import { colors } from '../navigation/TabNavigator';
 
+type RootStackParamList = {
+  Main: undefined;
+  AddAccount: { account?: Account };
+  AccountDetail: { accountId: string };
+};
+
+type AccountDetailScreenRouteProp = RouteProp<RootStackParamList, 'AccountDetail'>;
+type AccountDetailScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
 const AccountDetailScreen = () => {
-  const route = useRoute();
-  const { accountId } = route.params as { accountId: string };
-  const navigation = useNavigation();
+  const route = useRoute<AccountDetailScreenRouteProp>();
+  const { accountId } = route.params;
+  const navigation = useNavigation<AccountDetailScreenNavigationProp>();
   const { accounts, transactions } = useFinance();
   const [timeFrame, setTimeFrame] = useState<'1M' | '3M' | '6M' | '1Y' | 'All'>('6M');
   
@@ -174,14 +184,14 @@ const AccountDetailScreen = () => {
           style={styles.headerButton} 
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={24} color={colors.background} />
+          <Icon name="ArrowLeft" size={24} color={colors.background} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Account Details</Text>
         <TouchableOpacity 
           style={styles.headerButton} 
           onPress={() => navigation.navigate('AddAccount', { account })}
         >
-          <Icon name="edit" size={20} color={colors.background} />
+          <Icon name="Edit" size={20} color={colors.background} />
         </TouchableOpacity>
       </View>
       

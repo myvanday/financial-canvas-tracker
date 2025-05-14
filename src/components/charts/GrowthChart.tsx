@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { VictoryLine, VictoryChart, VictoryAxis, VictoryArea } from 'victory-native';
 import { colors } from '../../navigation/TabNavigator';

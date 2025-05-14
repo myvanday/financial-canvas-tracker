@@ -1,23 +1,34 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
+  TextInput, 
   StyleSheet, 
-  ScrollView, 
   TouchableOpacity, 
-  TextInput,
-  Alert
+  ScrollView,
+  Picker
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useFinance, Account, AssetType, AssetSubType } from '../context/FinanceContext';
 import Icon from '../components/Icon';
 import { colors } from '../navigation/TabNavigator';
 
+type RootStackParamList = {
+  Main: undefined;
+  AddAccount: { account?: Account };
+  AccountDetail: { accountId: string };
+};
+
+type AddAccountScreenRouteProp = RouteProp<RootStackParamList, 'AddAccount'>;
+type AddAccountScreenNavigationProp = StackNavigationProp<RootStackParamList>;
+
 const AddAccountScreen = () => {
+  const route = useRoute<AddAccountScreenRouteProp>();
+  const existingAccount = route.params?.account;
+  const navigation = useNavigation<AddAccountScreenNavigationProp>();
   const { addAccount, updateAccount, deleteAccount } = useFinance();
-  const navigation = useNavigation();
-  const route = useRoute();
-  const existingAccount = route.params?.account as Account | undefined;
   
   const [assetType, setAssetType] = useState<AssetType>(existingAccount?.assetType || 'money');
   const [assetSubType, setAssetSubType] = useState<AssetSubType>(existingAccount?.assetSubType || 'bank');
@@ -36,17 +47,17 @@ const AddAccountScreen = () => {
   const [rentalIncome, setRentalIncome] = useState<string>(existingAccount?.rentalIncome?.toString() || '');
 
   const isEditing = !!existingAccount;
-
+  
   const handleSubmit = () => {
     const parsedBalance = parseFloat(balance);
     
     if (!name.trim()) {
-      Alert.alert("Error", "Account name is required");
+      alert("Account name is required");
       return;
     }
     
     if (isNaN(parsedBalance) || parsedBalance < 0) {
-      Alert.alert("Error", "Please enter a valid balance");
+      alert("Please enter a valid balance");
       return;
     }
 
@@ -76,7 +87,7 @@ const AddAccountScreen = () => {
 
     if (isEditing && existingAccount) {
       updateAccount(existingAccount.id, parsedBalance, transactionType);
-      Alert.alert("Success", `Updated balance for ${name}`);
+      alert(`Updated balance for ${name}`);
     } else {
       addAccount({
         name,
@@ -87,7 +98,7 @@ const AddAccountScreen = () => {
         institution: institution.trim() || undefined,
         ...additionalFields
       });
-      Alert.alert("Success", `Added ${name} to your portfolio`);
+      alert(`Added ${name} to your portfolio`);
     }
     
     navigation.goBack();
@@ -95,25 +106,9 @@ const AddAccountScreen = () => {
 
   const handleDelete = () => {
     if (isEditing && existingAccount) {
-      Alert.alert(
-        "Confirm Delete",
-        `Are you sure you want to delete ${existingAccount.name}?`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel"
-          },
-          {
-            text: "Delete",
-            onPress: () => {
-              deleteAccount(existingAccount.id);
-              Alert.alert("Success", `Deleted ${existingAccount.name} from your portfolio`);
-              navigation.goBack();
-            },
-            style: "destructive"
-          }
-        ]
-      );
+      deleteAccount(existingAccount.id);
+      alert(`Deleted ${existingAccount.name} from your portfolio`);
+      navigation.goBack();
     }
   };
   
@@ -156,7 +151,7 @@ const AddAccountScreen = () => {
     if (assetType === 'savings') {
       return (
         <>
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Duration (months)</Text>
             <TextInput
               style={styles.input}
@@ -167,14 +162,14 @@ const AddAccountScreen = () => {
             />
           </View>
           
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Interest Rate (%)</Text>
             <TextInput
               style={styles.input}
               value={interestRate}
               onChangeText={setInterestRate}
               placeholder="e.g., 2.5"
-              keyboardType="decimal-pad"
+              keyboardType="numeric"
             />
           </View>
         </>
@@ -182,7 +177,7 @@ const AddAccountScreen = () => {
     } else if (assetType === 'investments') {
       return (
         <>
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>
               {assetSubType === 'stocks' ? 'Stock Name' : 
                assetSubType === 'bonds' ? 'Bond Name' :
@@ -197,18 +192,18 @@ const AddAccountScreen = () => {
             />
           </View>
           
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Quantity</Text>
             <TextInput
               style={styles.input}
               value={quantity}
               onChangeText={setQuantity}
               placeholder="e.g., 10"
-              keyboardType="decimal-pad"
+              keyboardType="numeric"
             />
           </View>
           
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Price Per Unit</Text>
             <View style={styles.inputWithPrefix}>
               <Text style={styles.inputPrefix}>$</Text>
@@ -217,7 +212,7 @@ const AddAccountScreen = () => {
                 value={pricePerUnit}
                 onChangeText={setPricePerUnit}
                 placeholder="0.00"
-                keyboardType="decimal-pad"
+                keyboardType="numeric"
               />
             </View>
           </View>
@@ -226,7 +221,7 @@ const AddAccountScreen = () => {
     } else if (assetType === 'physical') {
       if (assetSubType === 'property') {
         return (
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Monthly Rental Income</Text>
             <View style={styles.inputWithPrefix}>
               <Text style={styles.inputPrefix}>$</Text>
@@ -235,7 +230,7 @@ const AddAccountScreen = () => {
                 value={rentalIncome}
                 onChangeText={setRentalIncome}
                 placeholder="0.00"
-                keyboardType="decimal-pad"
+                keyboardType="numeric"
               />
             </View>
           </View>
@@ -243,18 +238,18 @@ const AddAccountScreen = () => {
       } else if (assetSubType === 'metal') {
         return (
           <>
-            <View style={styles.inputGroup}>
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Quantity (oz/g)</Text>
               <TextInput
                 style={styles.input}
                 value={quantity}
                 onChangeText={setQuantity}
                 placeholder="e.g., 10"
-                keyboardType="decimal-pad"
+                keyboardType="numeric"
               />
             </View>
             
-            <View style={styles.inputGroup}>
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Price Per Unit</Text>
               <View style={styles.inputWithPrefix}>
                 <Text style={styles.inputPrefix}>$</Text>
@@ -263,7 +258,7 @@ const AddAccountScreen = () => {
                   value={pricePerUnit}
                   onChangeText={setPricePerUnit}
                   placeholder="0.00"
-                  keyboardType="decimal-pad"
+                  keyboardType="numeric"
                 />
               </View>
             </View>
@@ -279,83 +274,64 @@ const AddAccountScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.headerButton}
+          style={styles.headerButton} 
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={24} color={colors.background} />
+          <Icon name="ArrowLeft" size={24} color={colors.background} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{isEditing ? 'Edit Account' : 'Add New Account'}</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>
+          {isEditing ? 'Edit Account' : 'Add New Account'}
+        </Text>
       </View>
       
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {!isEditing && (
           <>
-            <View style={styles.inputGroup}>
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Asset Type</Text>
-              <View style={styles.optionsContainer}>
-                {[
-                  { value: 'money', label: 'Money', icon: '💵' },
-                  { value: 'savings', label: 'Savings', icon: '💰' },
-                  { value: 'investments', label: 'Investments', icon: '📈' },
-                  { value: 'physical', label: 'Physical', icon: '🏠' }
-                ].map(option => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.assetOption,
-                      assetType === option.value && styles.selectedAssetOption
-                    ]}
-                    onPress={() => {
-                      setAssetType(option.value as AssetType);
-                      const subTypes = getSubTypeOptions();
-                      if (subTypes.length > 0) {
-                        setAssetSubType(subTypes[0].value);
-                      }
-                    }}
-                  >
-                    <Text style={styles.assetOptionIcon}>{option.icon}</Text>
-                    <Text style={[
-                      styles.assetOptionLabel,
-                      assetType === option.value && styles.selectedAssetOptionLabel
-                    ]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={assetType}
+                  onValueChange={(value) => {
+                    setAssetType(value as AssetType);
+                    // Reset subtype when asset type changes
+                    const subTypes = getSubTypeOptions();
+                    if (subTypes.length > 0) {
+                      setAssetSubType(subTypes[0].value);
+                    }
+                  }}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="💵 Money" value="money" />
+                  <Picker.Item label="💰 Savings" value="savings" />
+                  <Picker.Item label="📈 Investments" value="investments" />
+                  <Picker.Item label="🏠 Physical Assets" value="physical" />
+                </Picker>
               </View>
             </View>
             
-            <View style={styles.inputGroup}>
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Asset Sub-Type</Text>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.subTypeContainer}
-              >
-                {getSubTypeOptions().map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.subTypeOption,
-                      assetSubType === option.value && styles.selectedSubTypeOption
-                    ]}
-                    onPress={() => setAssetSubType(option.value)}
-                  >
-                    <Text style={[
-                      styles.subTypeLabel,
-                      assetSubType === option.value && styles.selectedSubTypeLabel
-                    ]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={assetSubType}
+                  onValueChange={(value) => setAssetSubType(value as AssetSubType)}
+                  style={styles.picker}
+                >
+                  {getSubTypeOptions().map((option) => (
+                    <Picker.Item 
+                      key={option.value} 
+                      label={option.label} 
+                      value={option.value} 
+                    />
+                  ))}
+                </Picker>
+              </View>
             </View>
           </>
         )}
         
-        <View style={styles.inputGroup}>
+        <View style={styles.formGroup}>
           <Text style={styles.label}>Account Name</Text>
           <TextInput
             style={styles.input}
@@ -367,21 +343,21 @@ const AddAccountScreen = () => {
         </View>
         
         {isEditing && (
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Transaction Type</Text>
-            <View style={styles.transactionTypeContainer}>
+            <View style={styles.transactionTypes}>
               {['buy', 'sell', 'update'].map((type) => (
                 <TouchableOpacity
                   key={type}
                   style={[
-                    styles.transactionTypeOption,
-                    transactionType === type && styles.selectedTransactionType
+                    styles.transactionType,
+                    transactionType === type && styles.activeTransactionType
                   ]}
                   onPress={() => setTransactionType(type as 'buy' | 'sell' | 'update')}
                 >
                   <Text style={[
-                    styles.transactionTypeLabel,
-                    transactionType === type && styles.selectedTransactionTypeLabel
+                    styles.transactionTypeText,
+                    transactionType === type && styles.activeTransactionTypeText
                   ]}>
                     {type.charAt(0).toUpperCase() + type.slice(1)}
                   </Text>
@@ -391,7 +367,7 @@ const AddAccountScreen = () => {
           </View>
         )}
         
-        <View style={styles.inputGroup}>
+        <View style={styles.formGroup}>
           <Text style={styles.label}>
             {isEditing 
               ? (transactionType === 'buy' 
@@ -409,47 +385,34 @@ const AddAccountScreen = () => {
               value={balance}
               onChangeText={setBalance}
               placeholder="0.00"
-              keyboardType="decimal-pad"
+              keyboardType="numeric"
             />
           </View>
         </View>
 
-        <View style={styles.inputGroup}>
+        <View style={styles.formGroup}>
           <Text style={styles.label}>Currency</Text>
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.currencyContainer}
-          >
-            {[
-              { code: 'USD', symbol: '$' },
-              { code: 'EUR', symbol: '€' },
-              { code: 'GBP', symbol: '£' },
-              { code: 'JPY', symbol: '¥' },
-              { code: 'AUD', symbol: 'A$' },
-              { code: 'CAD', symbol: 'C$' }
-            ].map((currencyOption) => (
-              <TouchableOpacity
-                key={currencyOption.code}
-                style={[
-                  styles.currencyOption,
-                  currency === currencyOption.code && styles.selectedCurrencyOption
-                ]}
-                onPress={() => setCurrency(currencyOption.code)}
-              >
-                <Text style={[
-                  styles.currencyLabel,
-                  currency === currencyOption.code && styles.selectedCurrencyLabel
-                ]}>
-                  {currencyOption.symbol} {currencyOption.code}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={currency}
+              onValueChange={(value) => setCurrency(value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="USD ($)" value="USD" />
+              <Picker.Item label="EUR (€)" value="EUR" />
+              <Picker.Item label="GBP (£)" value="GBP" />
+              <Picker.Item label="JPY (¥)" value="JPY" />
+              <Picker.Item label="AUD ($)" value="AUD" />
+              <Picker.Item label="CAD ($)" value="CAD" />
+              <Picker.Item label="CHF (Fr)" value="CHF" />
+              <Picker.Item label="CNY (¥)" value="CNY" />
+              <Picker.Item label="INR (₹)" value="INR" />
+            </Picker>
+          </View>
         </View>
         
         {!isEditing && (
-          <View style={styles.inputGroup}>
+          <View style={styles.formGroup}>
             <Text style={styles.label}>Institution (Optional)</Text>
             <TextInput
               style={styles.input}
@@ -460,6 +423,7 @@ const AddAccountScreen = () => {
           </View>
         )}
         
+        {/* Render asset-type specific fields */}
         {renderAssetTypeFields()}
         
         <View style={styles.buttonContainer}>
@@ -472,23 +436,21 @@ const AddAccountScreen = () => {
                 <Text style={styles.deleteButtonText}>Delete</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={styles.submitButton}
+                style={styles.saveButton}
                 onPress={handleSubmit}
               >
-                <Text style={styles.submitButtonText}>Save Changes</Text>
+                <Text style={styles.buttonText}>Save Changes</Text>
               </TouchableOpacity>
             </>
           ) : (
             <TouchableOpacity 
-              style={styles.submitButton}
+              style={styles.saveButton}
               onPress={handleSubmit}
             >
-              <Text style={styles.submitButtonText}>Add Account</Text>
+              <Text style={styles.buttonText}>Add Account</Text>
             </TouchableOpacity>
           )}
         </View>
-        
-        <View style={{ height: 20 }} />
       </ScrollView>
     </View>
   );
@@ -504,30 +466,31 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   headerButton: {
-    padding: 4,
+    padding: 8,
   },
   headerTitle: {
+    flex: 1,
+    marginLeft: 16,
     fontSize: 18,
     fontWeight: 'bold',
     color: colors.background,
-    textAlign: 'center',
   },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 16,
+    paddingBottom: 40,
   },
-  inputGroup: {
+  formGroup: {
     marginBottom: 16,
   },
   label: {
     fontSize: 14,
     fontWeight: '500',
-    marginBottom: 6,
+    marginBottom: 8,
     color: colors.text,
   },
   input: {
@@ -535,9 +498,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    padding: 12,
     fontSize: 16,
+  },
+  pickerContainer: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
   },
   inputWithPrefix: {
     flexDirection: 'row',
@@ -546,169 +518,72 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,
+    overflow: 'hidden',
   },
   inputPrefix: {
-    paddingLeft: 12,
+    paddingHorizontal: 12,
     fontSize: 16,
     color: colors.text,
   },
   prefixedInput: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    padding: 12,
     fontSize: 16,
   },
-  optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  assetOption: {
-    width: '48%',
-    padding: 16,
-    marginBottom: 10,
-    backgroundColor: colors.background,
-    borderWidth: 2,
-    borderColor: colors.border,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  selectedAssetOption: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  assetOptionIcon: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  assetOptionLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.text,
-  },
-  selectedAssetOptionLabel: {
-    color: colors.primary,
-  },
-  subTypeContainer: {
-    paddingVertical: 4,
-  },
-  subTypeOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-  },
-  selectedSubTypeOption: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  subTypeLabel: {
-    fontSize: 14,
-    color: colors.text,
-  },
-  selectedSubTypeLabel: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  transactionTypeContainer: {
+  transactionTypes: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  transactionTypeOption: {
+  transactionType: {
     flex: 1,
-    padding: 12,
-    marginHorizontal: 4,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    paddingVertical: 12,
     alignItems: 'center',
-  },
-  selectedTransactionType: {
-    borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
-  },
-  transactionTypeLabel: {
-    fontSize: 14,
-    color: colors.text,
-  },
-  selectedTransactionTypeLabel: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  currencyContainer: {
-    paddingVertical: 4,
-  },
-  currencyOption: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-    backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
+    marginHorizontal: 4,
     borderRadius: 8,
+    backgroundColor: colors.background,
   },
-  selectedCurrencyOption: {
+  activeTransactionType: {
+    backgroundColor: `${colors.primary}20`,
     borderColor: colors.primary,
-    backgroundColor: `${colors.primary}10`,
   },
-  currencyLabel: {
-    fontSize: 14,
+  transactionTypeText: {
     color: colors.text,
   },
-  selectedCurrencyLabel: {
+  activeTransactionTypeText: {
     color: colors.primary,
     fontWeight: '500',
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 24,
   },
-  submitButton: {
+  saveButton: {
     flex: 1,
     backgroundColor: colors.primary,
-    padding: 16,
     borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
-    marginLeft: isEditing => isEditing ? 8 : 0,
-  },
-  submitButtonText: {
-    color: colors.background,
-    fontSize: 16,
-    fontWeight: '600',
   },
   deleteButton: {
     flex: 1,
     backgroundColor: colors.background,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.error,
-    marginRight: 8,
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  buttonText: {
+    color: colors.background,
+    fontSize: 16,
+    fontWeight: '500',
   },
   deleteButtonText: {
     color: colors.error,
     fontSize: 16,
-    fontWeight: '600',
-  },
-  additionalField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  additionalFieldLabel: {
-    fontSize: 14,
-    color: colors.muted,
-    width: 110,
-  },
-  additionalFieldValue: {
-    fontSize: 14,
-    color: colors.text,
     fontWeight: '500',
   },
 });

@@ -74,7 +74,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
             {growth >= 0 ? '+' : ''}{growth.toFixed(2)}% growth
           </Text>
         </View>
-        <Icon name="chevron-right" size={20} color={colors.muted} style={styles.chevron} />
+        <Icon name="ChevronRight" size={20} color={colors.muted} style={styles.chevron} />
       </View>
     </TouchableOpacity>
   );

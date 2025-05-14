@@ -1,9 +1,14 @@
 
 import React from 'react';
-import Layout from '../components/Layout';
+import { View } from 'react-native';
+import App from '../App';
 
 const Index: React.FC = () => {
-  return <Layout />;
+  return (
+    <View style={{ flex: 1 }}>
+      <App />
+    </View>
+  );
 };
 
 export default Index;

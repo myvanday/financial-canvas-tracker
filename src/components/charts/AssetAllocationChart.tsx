@@ -7,7 +7,7 @@ import { colors } from '../../navigation/TabNavigator';
 
 interface AssetAllocationChartProps {
   data: Record<string, number>;
-  historicalData?: Record<string, number>[] | { date: Date; allocation: Record<AssetType, number> }[];
+  historicalData?: Record<string, number>[] | { date: Date; allocation: Record<string, number> }[];
   title?: string;
   showTimeSelector?: boolean;
 }
